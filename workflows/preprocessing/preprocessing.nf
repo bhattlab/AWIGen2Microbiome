@@ -29,7 +29,8 @@ process FASTQC {
 
     script:
     """
-    fastqc.sh "$sample_id" "$reads"
+    mkdir fastqc_${sample_id}_logs
+    fastqc -o fastqc_${sample_id}_logs -f fastq -q ${reads}
     """
 }
 
@@ -48,6 +49,22 @@ process MULTIQC {
     """
 }
 
+process DEDUPLICATE {
+    input:
+    tuple val(sample_id), path(reads)
+
+    output:
+    tuple val(sample_id), path("${sample_id}_R*.fastq.gz")
+
+    script:
+    """
+    hts_SuperDeduper -1 ${reads[0]} -2 ${reads[1]} -p ${sample_id} -F -g
+    """
+
+
+
+}
+
 workflow {
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
@@ -55,6 +72,7 @@ workflow {
 
     fastqc_ch = FASTQC(read_pairs_ch)
     MULTIQC(fastqc_ch.collect())
+    deduplicated_ch = DEDUPLICATE(read_pairs_ch)
 }
 
 workflow.onComplete {
