@@ -110,6 +110,37 @@ process HOSTREMOVAL {
 
 }
 
+process POSTFASTQC{
+    input:
+    tuple val(sample_id), path(reads)
+
+    output:
+    path "postfastqc_${sample_id}_logs"
+
+    script:
+    """
+    mkdir postfastqc_${sample_id}_logs
+    fastqc -o postfastqc_${sample_id}_logs -f fastq -q ${reads}
+    """
+}
+
+/* FIXME still need to test this
+*/
+process POSTMULTIQC {
+    publishDir params.outdir, mode:'copy'
+
+    input:
+    path '*'
+
+    output:
+    path 'multiqc_report.html'
+
+    script:
+    """
+    multiqc .
+    """
+}
+
 workflow {
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
@@ -121,6 +152,8 @@ workflow {
     trim_galore_ch = TRIMGALORE(deduplicated_ch)
     trim_galore_ch.view()
     host_remove_ch = HOSTREMOVAL(trim_galore_ch)
+    postfastqc_ch = POSTFASTQC(host_remove_ch)
+    POSTMULTIQC(postfastqc_ch.collect())
 
 }
 
