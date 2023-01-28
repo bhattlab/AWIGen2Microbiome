@@ -22,7 +22,7 @@ log.info """\
     .stripIndent()
 
 process fastqc {
-    publishDir params.outdir_stats + '/pre_fastqc'
+    publishDir params.outdir_stats + '/pre_fastqc', mode: 'copy'
     tag "FASTQC on $sample_id"
 
     input:
@@ -42,7 +42,7 @@ process fastqc {
 }
 
 process multiqc {
-    publishDir params.outdir_stats
+    publishDir params.outdir_stats, mode: 'copy'
 
     input:
     path '*'
@@ -95,21 +95,22 @@ process trimgalore {
 }
 
 process hostremoval {
-    publishDir params.outdir_preprocessed_reads
+    publishDir params.outdir_preprocessed_reads, mode: 'copy'
 
     input:
     tuple val(sample_id), path(reads)
+    path host_genome_location
 
     output:
     tuple val(sample_id), path("${sample_id}_cleaned_*fastq.gz")
 
     script:
     """
-    bwa mem ${params.bwa_index_base} ${reads[0]} ${reads[1]} | \
+    bwa mem ${host_genome_location}/*.fa ${reads[0]} ${reads[1]} | \
         samtools fastq -t -T BX -f 4 -1 ${sample_id}_cleaned_1.fastq.gz -2 ${sample_id}_cleaned_2.fastq.gz -s ${sample_id}_cleanedtemp_singletons.fastq.gz -
 
         # run on unpaired reads
-    bwa mem ${params.bwa_index_base} ${reads[2]} | \
+    bwa mem ${host_genome_location}/*.fa ${reads[2]} | \
         samtools fastq -t -T BX -f 4  - > ${sample_id}_cleanedtemp_singletons2.fastq.gz
 
     # combine singletons
@@ -120,7 +121,7 @@ process hostremoval {
 }
 
 process postfastqc{
-    publishDir params.outdir_stats + '/post_fastqc'
+    publishDir params.outdir_stats + '/post_fastqc', mode: 'copy'
     input:
     tuple val(sample_id), path(reads)
 
@@ -137,7 +138,7 @@ process postfastqc{
 /* FIXME still need to test this
 */
 process postmultiqc {
-    publishDir params.outdir_stats
+    publishDir params.outdir_stats, mode: 'copy'
 
     input:
     path '*'
@@ -160,7 +161,7 @@ workflow {
     multiqc(fastqc_ch.logs.collect())
     deduplicated_ch = deduplicate(read_pairs_ch)
     trim_galore_ch = trimgalore(deduplicated_ch)
-    host_remove_ch = hostremoval(trim_galore_ch)
+    host_remove_ch = hostremoval(trim_galore_ch, params.host_genome_location)
     postfastqc_ch = postfastqc(host_remove_ch)
     postmultiqc(postfastqc_ch.collect())
 
