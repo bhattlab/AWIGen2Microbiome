@@ -20,7 +20,8 @@ outdir_preprocessed_reads: "./preprocessed_reads"
 
 # location of the host genome
 # Important! It needs to be indexed already
-bwa_index_base: "/labs/asbhatt/wirbel/utils/host_genome/hg38/hg38.fa"
+host_genome_location: "/labs/asbhatt/wirbel/utils/host_genome/hg38/"
+bwa_index_base: "hg38.fa"
 
 # trim galore
 trimgalore_quality:  30
