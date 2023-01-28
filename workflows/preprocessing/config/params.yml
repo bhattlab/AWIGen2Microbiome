@@ -1,0 +1,34 @@
+
+# How are the final results published?
+# By default, files are copied from the work-dir.
+# Valid settings: "copy", "move", "link", "symlink"
+# ATT: "link" does not work on all filesystems, such as some /scratch volumes
+publish_mode: "copy"
+
+
+
+# Where should the results end up?
+# One folder for the statistics
+# One for the preprocessed reads
+# One for the classification results
+# One for the assemblies and bins?
+outdir_stats: "./stats"
+outdir_preprocessed_reads: "./preprocessed_reads"
+
+#########################################################################
+# Preprocessing parameters
+
+# location of the host genome
+# Important! It needs to be indexed already
+bwa_index_base: "/labs/asbhatt/wirbel/utils/host_genome/hg38/hg38.fa"
+
+# trim galore
+trimgalore_quality:  30
+trimgalore_min_read_length: 60
+trimgalore_start_trim: 0
+trimgalore_end_trim: 0
+
+
+#########################################################################
+# Classification parameters
+
