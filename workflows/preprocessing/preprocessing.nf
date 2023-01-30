@@ -22,7 +22,7 @@ log.info """\
     .stripIndent()
 
 process fastqc {
-    publishDir params.outdir_stats + '/pre_fastqc', mode: 'copy'
+    publishDir params.outdir_stats + '/pre_fastqc', mode: params.publish_mode
     tag "FASTQC on $sample_id"
 
     input:
@@ -42,7 +42,7 @@ process fastqc {
 }
 
 process multiqc {
-    publishDir params.outdir_stats, mode: 'copy'
+    publishDir params.outdir_stats, mode: params.publish_mode
 
     input:
     path '*'
@@ -95,7 +95,7 @@ process trimgalore {
 }
 
 process hostremoval {
-    publishDir params.outdir_preprocessed_reads, mode: 'copy'
+    publishDir params.outdir_preprocessed_reads, mode: params.publish_mode
 
     input:
     tuple val(sample_id), path(reads)
@@ -121,7 +121,7 @@ process hostremoval {
 }
 
 process postfastqc{
-    publishDir params.outdir_stats + '/post_fastqc', mode: 'copy'
+    publishDir params.outdir_stats + '/post_fastqc', mode: params.publish_mode
     input:
     tuple val(sample_id), path(reads)
 
@@ -138,7 +138,7 @@ process postfastqc{
 /* FIXME still need to test this
 */
 process postmultiqc {
-    publishDir params.outdir_stats, mode: 'copy'
+    publishDir params.outdir_stats, mode: params.publish_mode
 
     input:
     path '*'
