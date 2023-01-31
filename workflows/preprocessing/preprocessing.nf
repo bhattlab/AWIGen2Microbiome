@@ -17,7 +17,7 @@ log.info """\
     .stripIndent()
 
 process fastqc {
-    publishDir params.outdir + "/stats", mode:'copy'
+    publishDir params.outdir + "/stats", pattern: '*logs', mode:'copy'
     tag "FASTQC on $sample_id"
 
     input:
@@ -94,7 +94,7 @@ process trimgalore {
 }
 
 process hostremoval {
-    publishDir params.outdir  + "/preprocessing", mode:'copy'
+    publishDir params.outdir  + "/preprocessing", pattern: '*gz', mode:'copy'
 
     input:
     tuple val(sample_id), path(reads)
@@ -125,7 +125,7 @@ process hostremoval {
 }
 
 process postfastqc{
-    publishDir params.outdir + "/stats"
+    publishDir params.outdir + "/stats", mode: 'copy'
     input:
     tuple val(sample_id), path(reads)
 
@@ -156,19 +156,23 @@ process postmultiqc {
     """
 }
 
-// process aggregatereports {
-//   input:
-//   path '*'
-//
-//   output:
-//   path 'readcounts.tsv'
-//
-//   script:
-//   """
-//
-//   """
-//
-// }
+process aggregatereports {
+  publishDir params.outdir + "/stats", mode:'copy'
+
+  input:
+  path rawstats
+  path dedupstats
+  path trimstats
+  path hoststats
+
+  output:
+  path 'readcounts.tsv'
+
+  script:
+  """
+  cat ${rawstats}  ${dedupstats} ${trimstats} ${hoststats} > readcounts.tsv
+  """
+}
 
 
 workflow {
@@ -182,6 +186,7 @@ workflow {
     host_remove_ch = hostremoval(trim_galore_ch.trimreads)
     postfastqc_ch = postfastqc(host_remove_ch.hostremreads)
     postmultiqc(postfastqc_ch.collect())
+    aggregatereports(fastqc_ch.stats.collect(), deduplicated_ch.dedupstats.collect(), trim_galore_ch.trimstats.collect(), host_remove_ch.hoststats.collect())
 }
 
 workflow.onComplete {
