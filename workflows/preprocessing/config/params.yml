@@ -2,10 +2,8 @@
 # How are the final results published?
 # By default, files are copied from the work-dir.
 # Valid settings: "copy", "move", "link", "symlink"
-# ATT: "link" does not work on all filesystems, such as some /scratch volumes
+## Attention: "link" does not work on all filesystems, such as some /scratch volumes
 publish_mode: "copy"
-
-
 
 # Where should the results end up?
 # One folder for the statistics
@@ -14,6 +12,9 @@ publish_mode: "copy"
 # One for the assemblies and bins?
 outdir_stats: "./stats"
 outdir_preprocessed_reads: "./preprocessed_reads"
+outdir_classification: "./classification"
+outdir_assembly: "./assemblies"
+outdir_binning: "./binning"
 
 #########################################################################
 # Preprocessing parameters
@@ -33,3 +34,13 @@ trimgalore_end_trim: 0
 #########################################################################
 # Classification parameters
 
+run_motus: true
+run_metaphlan: true
+run_phanta: true
+
+# parameters for mOTUs2
+motus_map_lgs_cutoff: 2
+motus_min_len_align_length: 75
+
+# parameters for metaphlan
+# parameters for phanta
