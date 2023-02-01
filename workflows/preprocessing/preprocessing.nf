@@ -1,20 +1,22 @@
+#!/usr/bin/env nextflow
+
+nextflow.enable.dsl=2
+
+
 /*
- * pipeline input parameters
+ * pipeline input parameters -- This should go into a config file before long
  */
 params.projectdir = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata"
 params.reads = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata/*{1,2}.fq.gz"
-params.multiqc = "$projectDir/multiqc"
-params.outdir = "/labs/asbhatt/dmaghini/projects/awigen2/AWIGen2Microbiome/workflows/preprocessing/results"
-params.bwa_index_base = "/labs/asbhatt/data/host_reference_genomes/hg19/hg19.fa"
-
-
 
 
 log.info """\
-    METAGENOMIC PREPROCESSING - N F   P I P E L I N E
+    METAGENOMIC PREPROCESSING - NF PIPELINE
     ===================================
-    reads        : ${params.reads}
-    outdir       : ${params.outdir}
+    raw.reads        : ${params.reads}
+    host.genome      : ${params.bwa_index_base}
+    
+    outdir reads     : ${params.outdir}
     """
     .stripIndent()
 
@@ -24,7 +26,7 @@ log.info """\
 */
 
 process fastqc {
-    publishDir params.outdir + "/stats", pattern: '*logs', mode:'copy'
+    publishDir params.outdir + "/stats/pre_fastqc", pattern: '*logs', mode: params.publish_mode
     tag "FASTQC on $sample_id"
 
     input:
@@ -37,14 +39,14 @@ process fastqc {
     script:
     """
     mkdir prefastqc_${sample_id}_logs
-    fastqc -o prefastqc_${sample_id}_logs -f fastq -q ${reads}
+    fastqc -o prefastqc_${sample_id}_logs --extract -f fastq -q ${reads}
     readcount=\$(echo \$((\$(zcat ${reads[0]} | wc -l) / 2)))
     echo ${sample_id}"\tRaw\t"\$readcount > "counts_${sample_id}_raw.tsv"
     """
 }
 
 process multiqc {
-    publishDir params.outdir + "/stats", mode:'copy'
+    publishDir params.outdir + "/stats", mode: params.publish_mode
 
     input:
     path '*'
@@ -74,10 +76,7 @@ process deduplicate {
     """
 }
 
-/*
- * FIXME: still need to edit this to take in preprocessing values as params
- * and optionally to take in params for start/end trim in different positions
- */
+
 process trimgalore {
     input:
     tuple val(sample_id), path(reads)
@@ -88,7 +87,8 @@ process trimgalore {
 
     script:
     """
-    trim_galore --quality 30 --length 60 --paired ${reads[0]} ${reads[1]} --retain_unpaired
+    trim_galore --quality ${params.trimgalore_quality} --length ${params.trimgalore_min_read_length} \
+        --paired ${reads[0]} ${reads[1]} --retain_unpaired
 
     zcat -f ${sample_id}_R1_unpaired_1.fq.gz ${sample_id}_R2_unpaired_2.fq.gz | pigz -b 32 > ${sample_id}_val_unpaired.fq.gz
     rm ${sample_id}_R1_unpaired_1.fq.gz ${sample_id}_R2_unpaired_2.fq.gz
@@ -101,10 +101,11 @@ process trimgalore {
 }
 
 process hostremoval {
-    publishDir params.outdir  + "/preprocessing", pattern: '*gz', mode:'copy'
+    publishDir params.outdir  + "/preprocessed_reads", pattern: '*gz', mode: params.publish_mode
 
     input:
     tuple val(sample_id), path(reads)
+    path host_genome_location
 
     output:
     tuple val(sample_id), path("${sample_id}_cleaned_*fastq.gz"), emit: hostremreads
@@ -112,11 +113,11 @@ process hostremoval {
 
     script:
     """
-    bwa mem /labs/asbhatt/data/host_reference_genomes/hg19/hg19.fa ${reads[0]} ${reads[1]} | \
+    bwa mem ${host_genome_location}/*.fa ${reads[0]} ${reads[1]} | \
         samtools fastq -t -T BX -f 4 -1 ${sample_id}_cleaned_1.fastq.gz -2 ${sample_id}_cleaned_2.fastq.gz -s ${sample_id}_cleanedtemp_singletons.fastq.gz -
 
         # run on unpaired reads
-    bwa mem /labs/asbhatt/data/host_reference_genomes/hg19/hg19.fa ${reads[2]} | \
+    bwa mem ${host_genome_location}/*.fa ${reads[2]} | \
         samtools fastq -t -T BX -f 4  - > ${sample_id}_cleanedtemp_singletons2.fastq.gz
 
     # combine singletons
@@ -132,7 +133,7 @@ process hostremoval {
 }
 
 process postfastqc{
-    publishDir params.outdir + "/stats", mode: 'copy'
+    publishDir params.outdir + "/stats/post_fastqc", mode: params.publish_mode
     input:
     tuple val(sample_id), path(reads)
 
@@ -142,14 +143,12 @@ process postfastqc{
     script:
     """
     mkdir postfastqc_${sample_id}_logs
-    fastqc -o postfastqc_${sample_id}_logs -f fastq -q ${reads}
+    fastqc -o postfastqc_${sample_id}_logs --extract -f fastq -q ${reads}
     """
 }
 
-/* FIXME still need to test this
-*/
 process postmultiqc {
-    publishDir params.outdir + "/stats", mode:'copy'
+    publishDir params.outdir + "/stats", mode: params.publish_mode
 
     input:
     path '*'
@@ -164,8 +163,8 @@ process postmultiqc {
 }
 
 process aggregatereports {
-  publishDir params.outdir + "/stats", mode:'copy'
-
+  publishDir params.outdir + "/stats/read_counts", mode: params.publish_mode
+  
   input:
   path rawstats
   path dedupstats
@@ -188,7 +187,7 @@ process aggregatereports {
 */
 
 process megahit {
-  publishDir params.outdir + "/assembly", pattern: 'megahit_out/*contigs.fa', mode:'copy'
+  publishDir params.outdir + "/assembly", pattern: 'megahit_out/*contigs.fa', mode: params.publish_mode
 
   input:
   tuple val(sample_id), path(reads)
@@ -217,6 +216,11 @@ process quast {
 }
 
 workflow {
+    /* FIXME
+    The input should be a bit more customizable... will have to think about this in the future
+    for example: what about other file endings? samples sequenced on several lanes?
+    for the future, though
+    */
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
         .set { read_pairs_ch }
@@ -226,15 +230,24 @@ workflow {
     multiqc(fastqc_ch.logs.collect())
     deduplicated_ch = deduplicate(read_pairs_ch)
     trim_galore_ch = trimgalore(deduplicated_ch.dedupreads)
-    host_remove_ch = hostremoval(trim_galore_ch.trimreads)
+    host_remove_ch = hostremoval(trim_galore_ch.trimreads, params.host_genome_location)
     postfastqc_ch = postfastqc(host_remove_ch.hostremreads)
     postmultiqc(postfastqc_ch.collect())
-    aggregatereports(fastqc_ch.stats.collect(), deduplicated_ch.dedupstats.collect(), trim_galore_ch.trimstats.collect(), host_remove_ch.hoststats.collect())
+    aggregatereports(fastqc_ch.stats.collect(), 
+                     deduplicated_ch.dedupstats.collect(), 
+                     trim_galore_ch.trimstats.collect(), 
+                     host_remove_ch.hoststats.collect())
+    
+    // CLASSIFICATION
+    
+    // ASSEMBLY
     megahit_ch = megahit(host_remove_ch.hostremreads)
     //quast(megahit_ch)
+    
+    // BINNING
 
 }
 
 workflow.onComplete {
-    log.info ( workflow.success ? "\nDone! Open the following report in your browser --> $params.outdir/multiqc_report.html\n" : "Oops .. something went wrong" )
+    log.info ( workflow.success ? "\nDone! Yay!\n" : "Oops .. something went wrong" )
 }
