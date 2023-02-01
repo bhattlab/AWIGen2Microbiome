@@ -106,6 +106,7 @@ process hostremoval {
     input:
     tuple val(sample_id), path(reads)
     path host_genome_location
+    val bwa_index_base
 
     output:
     tuple val(sample_id), path("${sample_id}_cleaned_*fastq.gz"), emit: hostremreads
@@ -113,11 +114,11 @@ process hostremoval {
 
     script:
     """
-    bwa mem ${host_genome_location}/*.fa ${reads[0]} ${reads[1]} | \
+    bwa mem ${host_genome_location}/${bwa_index_base} ${reads[0]} ${reads[1]} | \
         samtools fastq -t -T BX -f 4 -1 ${sample_id}_cleaned_1.fastq.gz -2 ${sample_id}_cleaned_2.fastq.gz -s ${sample_id}_cleanedtemp_singletons.fastq.gz -
 
         # run on unpaired reads
-    bwa mem ${host_genome_location}/*.fa ${reads[2]} | \
+    bwa mem ${host_genome_location}/${bwa_index_base} ${reads[2]} | \
         samtools fastq -t -T BX -f 4  - > ${sample_id}_cleanedtemp_singletons2.fastq.gz
 
     # combine singletons
@@ -230,7 +231,7 @@ workflow {
     multiqc(fastqc_ch.logs.collect())
     deduplicated_ch = deduplicate(read_pairs_ch)
     trim_galore_ch = trimgalore(deduplicated_ch.dedupreads)
-    host_remove_ch = hostremoval(trim_galore_ch.trimreads, params.host_genome_location)
+    host_remove_ch = hostremoval(trim_galore_ch.trimreads, params.host_genome_location, params.bwa_index_base)
     postfastqc_ch = postfastqc(host_remove_ch.hostremreads)
     postmultiqc(postfastqc_ch.collect())
     aggregatereports(fastqc_ch.stats.collect(), 
