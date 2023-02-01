@@ -10,11 +10,7 @@ publish_mode: "copy"
 # One for the preprocessed reads
 # One for the classification results
 # One for the assemblies and bins?
-outdir_stats: "./stats"
-outdir_preprocessed_reads: "./preprocessed_reads"
-outdir_classification: "./classification"
-outdir_assembly: "./assemblies"
-outdir_binning: "./binning"
+outdir: "./"
 
 #########################################################################
 # Preprocessing parameters
