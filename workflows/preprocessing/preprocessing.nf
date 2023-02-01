@@ -8,6 +8,8 @@ params.outdir = "/labs/asbhatt/dmaghini/projects/awigen2/AWIGen2Microbiome/workf
 params.bwa_index_base = "/labs/asbhatt/data/host_reference_genomes/hg19/hg19.fa"
 
 
+
+
 log.info """\
     METAGENOMIC PREPROCESSING - N F   P I P E L I N E
     ===================================
@@ -15,6 +17,11 @@ log.info """\
     outdir       : ${params.outdir}
     """
     .stripIndent()
+
+/* PREPROCESSING
+ * Processes for fastqc, multiqc, and read processing, including
+ * deduplication, trimming, human read removal
+*/
 
 process fastqc {
     publishDir params.outdir + "/stats", pattern: '*logs', mode:'copy'
@@ -175,10 +182,46 @@ process aggregatereports {
 }
 
 
+/* ASSEMBLY
+ * Runs megahit on paired and orphan reads, then uses QUAST to measure
+ * assembly quality. Combines quast reports into a single report.
+*/
+
+process megahit {
+  publishDir params.outdir + "/assembly", pattern: 'megahit_out/*contigs.fa', mode:'copy'
+
+  input:
+  tuple val(sample_id), path(reads)
+
+  output:
+  tuple val(sample_id), path("megahit_out/${sample_id}.contigs.fa")
+
+  shell:
+  """
+  megahit -1 ${reads[0]} -2 ${reads[1]} -r ${reads[2]} --out-prefix ${sample_id}
+  """
+
+}
+
+process quast {
+  input:
+  tuple val(sample_id), path(contigs)
+
+  output:
+  tuple val(sample_id), path(quast)
+
+  shell:
+  """
+  quast.py -o quast ${contigs} --fast
+  """
+}
+
 workflow {
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
         .set { read_pairs_ch }
+
+    // PREPROCESSING
     fastqc_ch = fastqc(read_pairs_ch)
     multiqc(fastqc_ch.logs.collect())
     deduplicated_ch = deduplicate(read_pairs_ch)
@@ -187,6 +230,9 @@ workflow {
     postfastqc_ch = postfastqc(host_remove_ch.hostremreads)
     postmultiqc(postfastqc_ch.collect())
     aggregatereports(fastqc_ch.stats.collect(), deduplicated_ch.dedupstats.collect(), trim_galore_ch.trimstats.collect(), host_remove_ch.hoststats.collect())
+    megahit_ch = megahit(host_remove_ch.hostremreads)
+    //quast(megahit_ch)
+
 }
 
 workflow.onComplete {
