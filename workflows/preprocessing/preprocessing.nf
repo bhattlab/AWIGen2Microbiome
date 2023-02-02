@@ -6,7 +6,6 @@ nextflow.enable.dsl=2
 /*
  * pipeline input parameters -- This should go into a config file before long
  */
-params.projectdir = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata"
 params.reads = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata/*{1,2}.fq.gz"
 
 
@@ -16,7 +15,7 @@ log.info """\
     raw.reads        : ${params.reads}
     host.genome      : ${params.bwa_index_base}
     
-    outdir reads     : ${params.outdir}
+    outdir           : ${params.outdir}
     """
     .stripIndent()
 
@@ -26,27 +25,25 @@ log.info """\
 */
 
 process fastqc {
-    publishDir params.outdir + "/stats/pre_fastqc", pattern: '*logs', mode: params.publish_mode
+    publishDir params.outdir + "/stats/pre_fastqc", pattern: '*logs/*.[(zip)|(html)]', mode: params.publish_mode
     tag "FASTQC on $sample_id"
 
     input:
     tuple val(sample_id), path(reads)
 
     output:
-    path "prefastqc_${sample_id}_logs", emit: logs
+    path "prefastqc_${sample_id}_logs/*", emit: logs
     path "counts_${sample_id}_raw.tsv", emit: stats
 
     script:
     """
-    mkdir prefastqc_${sample_id}_logs
-    fastqc -o prefastqc_${sample_id}_logs --extract -f fastq -q ${reads}
-    readcount=\$(echo \$((\$(zcat ${reads[0]} | wc -l) / 2)))
-    echo ${sample_id}"\tRaw\t"\$readcount > "counts_${sample_id}_raw.tsv"
+    fastqc.sh "${sample_id}" "${reads}"
     """
 }
 
 process multiqc {
     publishDir params.outdir + "/stats", mode: params.publish_mode
+    tag "MULTIQC before anything"
 
     input:
     path '*'
@@ -61,9 +58,11 @@ process multiqc {
 }
 
 process deduplicate {
+    tag "DEDUPLICATION of reads on $sample_id"
+
     input:
     tuple val(sample_id), path(reads)
-
+  
     output:
     tuple val(sample_id), path("${sample_id}_R*.fastq.gz"), emit: dedupreads
     path("counts_${sample_id}_dedup.tsv"), emit: dedupstats
@@ -71,13 +70,14 @@ process deduplicate {
     script:
     """
     hts_SuperDeduper -1 ${reads[0]} -2 ${reads[1]} -f ${sample_id} -F
-    readcount=\$(echo \$((\$(zcat ${sample_id}_R1.fastq.gz | wc -l) / 2)))
-    echo ${sample_id}"\tDeduplicate\t"\$readcount > "counts_${sample_id}_dedup.tsv"
+    count_deduplicate.py ${sample_id} stats.log > counts_${sample_id}_dedup.tsv
     """
 }
 
 
 process trimgalore {
+    tag "TRIMGALORE on $sample_id"
+
     input:
     tuple val(sample_id), path(reads)
 
@@ -242,7 +242,7 @@ workflow {
     // CLASSIFICATION
     
     // ASSEMBLY
-    megahit_ch = megahit(host_remove_ch.hostremreads)
+    //megahit_ch = megahit(host_remove_ch.hostremreads)
     //quast(megahit_ch)
     
     // BINNING
