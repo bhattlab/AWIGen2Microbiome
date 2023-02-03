@@ -45,6 +45,7 @@ vignettes/*.pdf
 *.sif
 .nextflow*
 work/
+output/
 
 # Slurm
 *.err
