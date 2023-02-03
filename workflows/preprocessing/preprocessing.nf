@@ -181,6 +181,27 @@ process aggregatereports {
   """
 }
 
+/* CLASSIFICATION
+ * Processes for motus, metaphlan, phanta (including kraken2)
+*/
+
+process motus {
+  publishDir params.outdir + "/classification/motus", mode: params.publish_mode
+  tag: "mOTUs for $sample_id"
+
+  input:
+  tuple val(sample_id), path(reads)
+
+  output:
+  path "motus_${sample_id}.out"
+
+  script:
+  """
+  motus profile -n ${sample_id} -t $task.cpus -c -l ${params.motus_min_length} -g ${params.motus_marker_genes} \
+    -f ${reads[0]} -r ${reads[1]} -s ${reads[2]} -o motus_${sample_id}.out
+  """
+}
+
 
 /* ASSEMBLY
  * Runs megahit on paired and orphan reads, then uses QUAST to measure
