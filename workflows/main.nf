@@ -62,34 +62,8 @@ include { motus } from  "./modules/classification/motus"
  * assembly quality. Combines quast reports into a single report.
 */
 
-process megahit {
-  publishDir params.outdir + "/assembly", pattern: 'megahit_out/*contigs.fa', mode: params.publish_mode
-
-  input:
-  tuple val(sample_id), path(reads)
-
-  output:
-  tuple val(sample_id), path("megahit_out/${sample_id}.contigs.fa")
-
-  shell:
-  """
-  megahit -1 ${reads[0]} -2 ${reads[1]} -r ${reads[2]} --out-prefix ${sample_id}
-  """
-
-}
-
-process quast {
-  input:
-  tuple val(sample_id), path(contigs)
-
-  output:
-  tuple val(sample_id), path(quast)
-
-  shell:
-  """
-  quast.py -o quast ${contigs} --fast
-  """
-}
+include { megahit } from "./modules/assembly/megahit"
+include { quast } from "./modules/assembly/quast"
 
 workflow {
     /* FIXME
@@ -117,8 +91,8 @@ workflow {
     // CLASSIFICATION
     motus_ch = motus(host_remove_ch.hostremreads)
     // ASSEMBLY
-    //megahit_ch = megahit(host_remove_ch.hostremreads)
-    //quast(megahit_ch)
+    megahit_ch = megahit(host_remove_ch.hostremreads)
+    quast(megahit_ch)
     
     // BINNING
 

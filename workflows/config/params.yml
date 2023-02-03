@@ -39,4 +39,6 @@ motus_map_mgs_cutoff: 2
 motus_min_len_align_length: 75
 
 # parameters for metaphlan
+metaphlan_db_path: "/labs/asbhatt/wirbel/utils/metaphlan_db/"
+
 # parameters for phanta
