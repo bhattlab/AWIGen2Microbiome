@@ -187,7 +187,7 @@ process aggregatereports {
 
 process motus {
   publishDir params.outdir + "/classification/motus", mode: params.publish_mode
-  tag: "mOTUs for $sample_id"
+  tag "mOTUs for $sample_id"
 
   input:
   tuple val(sample_id), path(reads)
@@ -197,7 +197,8 @@ process motus {
 
   script:
   """
-  motus profile -n ${sample_id} -t $task.cpus -c -l ${params.motus_min_length} -g ${params.motus_marker_genes} \
+  motus profile -n ${sample_id} -t $task.cpus -c \
+    -l ${params.motus_min_len_align_length} -g ${params.motus_map_mgs_cutoff} \
     -f ${reads[0]} -r ${reads[1]} -s ${reads[2]} -o motus_${sample_id}.out
   """
 }
@@ -255,13 +256,13 @@ workflow {
     host_remove_ch = hostremoval(trim_galore_ch.trimreads, params.host_genome_location, params.bwa_index_base)
     postfastqc_ch = postfastqc(host_remove_ch.hostremreads)
     postmultiqc(postfastqc_ch.collect())
-    aggregatereports(fastqc_ch.stats.collect(), 
-                     deduplicated_ch.dedupstats.collect(), 
-                     trim_galore_ch.trimstats.collect(), 
-                     host_remove_ch.hoststats.collect())
+    //aggregatereports(fastqc_ch.stats.collect(), 
+    //                 deduplicated_ch.dedupstats.collect(), 
+    //                 trim_galore_ch.trimstats.collect(), 
+    //                 host_remove_ch.hoststats.collect())
     
     // CLASSIFICATION
-    
+    motus_ch = motus(host_remove_ch.hostremreads)
     // ASSEMBLY
     //megahit_ch = megahit(host_remove_ch.hostremreads)
     //quast(megahit_ch)

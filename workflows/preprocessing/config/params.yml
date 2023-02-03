@@ -35,7 +35,7 @@ run_metaphlan: true
 run_phanta: true
 
 # parameters for mOTUs2
-motus_map_lgs_cutoff: 2
+motus_map_mgs_cutoff: 2
 motus_min_len_align_length: 75
 
 # parameters for metaphlan
