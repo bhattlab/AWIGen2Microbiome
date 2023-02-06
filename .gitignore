@@ -46,6 +46,7 @@ vignettes/*.pdf
 .nextflow*
 work/
 output/
+output_small*
 trace*
 *.html
 
