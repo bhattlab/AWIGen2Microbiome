@@ -6,10 +6,11 @@ process trimgalore {
 
     input:
     tuple val(sample_id), path(reads)
+    tuple val(sample_id), path(stats)
 
     output:
-    tuple val(sample_id), path("${sample_id}*val_*.fq.gz"), emit: trimreads
-    path("counts_${sample_id}_trim.tsv"), emit: trimstats
+    tuple val(sample_id), path("${sample_id}*val_*.fq.gz"), emit: reads
+    tuple val(sample_id), path("${stats}"), emit: stats
 
     script:
     """
@@ -19,8 +20,9 @@ process trimgalore {
     rm ${sample_id}_R1_unpaired_1.fq.gz ${sample_id}_R2_unpaired_2.fq.gz
     readcount_paired=\$(echo \$((\$(zcat ${sample_id}_R1_val_1.fq.gz | wc -l) / 2)))
     readcount_unpaired=\$(echo \$((\$(zcat ${sample_id}_val_unpaired.fq.gz | wc -l) / 4)))
+    
     totalcount=\$(echo \$((\$readcount_paired + \$readcount_unpaired)))
-    echo ${sample_id}"\tTrim\t"\$totalcount > "counts_${sample_id}_trim.tsv"
+    echo ${sample_id}"\ttrimmed\t"\$totalcount >> "${stats}"
     """
 }
 

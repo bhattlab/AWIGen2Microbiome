@@ -3,12 +3,13 @@ process hostremoval {
 
     input:
     tuple val(sample_id), path(reads)
+    tuple val(sample_id), path(stats)
     path host_genome_location
     val bwa_index_base
 
     output:
-    tuple val(sample_id), path("${sample_id}_cleaned_*fastq.gz"), emit: hostremreads
-    path("counts_${sample_id}_hostrem.tsv"), emit: hoststats
+    tuple val(sample_id), path("${sample_id}_cleaned_*fastq.gz"), emit: reads
+    path("${stats}"), emit: stats
 
     script:
     """
@@ -23,7 +24,8 @@ process hostremoval {
     readcount_paired=\$(echo \$((\$(zcat ${sample_id}_cleaned_1.fastq.gz | wc -l) / 2)))
     readcount_unpaired=\$(echo \$((\$(zcat ${sample_id}_cleaned_orphans.fastq.gz | wc -l) / 4)))
     totalcount=\$(echo \$((\$readcount_paired + \$readcount_unpaired)))
-    echo ${sample_id}"\tHostRemoved\t"\$totalcount > "counts_${sample_id}_hostrem.tsv"
+    echo ${sample_id}"\trmhost\t"\$totalcount >> "${stats}"
+    echo ${sample_id}"\torphans\t"\${readcount_unpaired} >> "${stats}"
     """
 
 }
