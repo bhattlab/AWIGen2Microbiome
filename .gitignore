@@ -46,6 +46,8 @@ vignettes/*.pdf
 .nextflow*
 work/
 output/
+trace*
+*.html
 
 # Slurm
 *.err
