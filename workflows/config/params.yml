@@ -10,7 +10,7 @@ publish_mode: "copy"
 # One for the preprocessed reads
 # One for the classification results
 # One for the assemblies and bins?
-outdir: "./output"
+outdir: "./output_small"
 
 #########################################################################
 # Preprocessing parameters

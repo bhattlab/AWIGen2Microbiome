@@ -2,22 +2,8 @@
 
 nextflow.enable.dsl=2
 
-
-/*
- * pipeline input parameters -- This should go into a config file before long
- */
+// params.reads = "/labs/asbhatt/dmaghini/projects/awigen2/workflow_planning/00.test_samples/*_{1,2}.fq.gz"
 params.reads = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata/*{1,2}.fq.gz"
-
-
-log.info """\
-    METAGENOMIC PREPROCESSING - NF PIPELINE
-    ===================================
-    raw.reads        : ${params.reads}
-    host.genome      : ${params.bwa_index_base}
-    
-    outdir           : ${params.outdir}
-    """
-    .stripIndent()
 
 /* PREPROCESSING
  * Processes for fastqc, multiqc, and read processing, including
@@ -31,31 +17,14 @@ include { postmultiqc } from "./modules/preprocessing/multiqc"
 include { deduplicate } from "./modules/preprocessing/deduplicate"
 include { trimgalore } from "./modules/preprocessing/trimgalore"
 include { hostremoval } from "./modules/preprocessing/hostremoval"
-
-
-process aggregatereports {
-  publishDir params.outdir + "/stats/read_counts", mode: params.publish_mode
-  
-  input:
-  path rawstats
-  path dedupstats
-  path trimstats
-  path hoststats
-
-  output:
-  path 'readcounts.tsv'
-
-  script:
-  """
-  cat ${rawstats}  ${dedupstats} ${trimstats} ${hoststats} > readcounts.tsv
-  """
-}
+include { aggregatereports } from "./modules/preprocessing/aggregate"
 
 /* CLASSIFICATION
  * Processes for motus, metaphlan, phanta (including kraken2)
 */
 
 include { motus } from  "./modules/classification/motus"
+include { metaphlan } from "./modules/classification/metaphlan"
 
 /* ASSEMBLY
  * Runs megahit on paired and orphan reads, then uses QUAST to measure
@@ -77,21 +46,25 @@ workflow {
 
     // PREPROCESSING
     fastqc_ch = fastqc(read_pairs_ch)
-    multiqc(fastqc_ch.logs.collect())
+    multiqc(fastqc_ch.collect())
     deduplicated_ch = deduplicate(read_pairs_ch)
-    trim_galore_ch = trimgalore(deduplicated_ch.dedupreads)
-    host_remove_ch = hostremoval(trim_galore_ch.trimreads, params.host_genome_location, params.bwa_index_base)
-    postfastqc_ch = postfastqc(host_remove_ch.hostremreads)
+    trim_galore_ch = trimgalore(deduplicated_ch.reads, deduplicated_ch.stats)
+    host_remove_ch = hostremoval(trim_galore_ch.reads, trim_galore_ch.stats, 
+                                 params.host_genome_location, params.bwa_index_base)
+    postfastqc_ch = postfastqc(host_remove_ch.reads)
     postmultiqc(postfastqc_ch.collect())
-    //aggregatereports(fastqc_ch.stats.collect(), 
-    //                 deduplicated_ch.dedupstats.collect(), 
-    //                 trim_galore_ch.trimstats.collect(), 
-    //                 host_remove_ch.hoststats.collect())
+    aggregatereports(host_remove_ch.stats.collect())
     
     // CLASSIFICATION
-    motus_ch = motus(host_remove_ch.hostremreads)
+    motus_ch = motus(host_remove_ch.reads)
+    metaphlan_ch = metaphlan(host_remove_ch.reads, params.metaphlan_db_path)
+    // phanta_ch = phanta(host_remove_ch.reads)
+
+    // these results need to be collated as well
+
+
     // ASSEMBLY
-    megahit_ch = megahit(host_remove_ch.hostremreads)
+    megahit_ch = megahit(host_remove_ch.reads)
     quast(megahit_ch)
     
     // BINNING
