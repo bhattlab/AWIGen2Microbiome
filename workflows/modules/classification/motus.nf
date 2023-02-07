@@ -9,7 +9,7 @@ process motus {
 	tuple val(sample_id), path(reads)
 
 	output:
-	path "motus_${sample_id}.out"
+	path "motus_${sample_id}.out", emit: motus_res
 
 	script:
 	"""
@@ -19,4 +19,21 @@ process motus {
 	"""
 }
 
+process collate_motus { 
+	publishDir params.outdir + "/classification", mode: params.publish_mode
+
+	input:
+	path(motus_res)
+
+	output:
+	path "motus_all.tsv"
+
+	script:
+	"""
+	mkdir -p tmp
+	
+	mv $motus_res ./tmp
+	motus merge -o motus_all.tsv -d ./tmp
+	"""
+}
 
