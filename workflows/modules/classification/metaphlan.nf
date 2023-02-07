@@ -33,7 +33,9 @@ process collate_metaphlan {
 	
 	script:
 	"""
-	combine_metaphlan.py $metaphlan_res > metaphlan_all.tsv
+	mkdir -p mpa_all
+	mv $metaphlan_res ./mpa_all
+	combine_metaphlan.py ./mpa_all
 	"""
 }
 
