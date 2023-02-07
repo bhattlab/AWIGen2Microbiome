@@ -5,7 +5,7 @@ import csv
 
 out_file = sys.argv[1]
 file_out = open(out_file, 'w')
-file_out.write('Sample\traw_reads\tdedup_reads\tdedup_frac\ttrimmed_reads\ttrimmed_frac\thost_removed_reads\thost_removed_frac\torphan_reads\torphan_frac\n')
+file_out.write('Sample\traw_reads\tdedup_reads\tdedup_frac\ttrimmed_reads\ttrimmed_frac\thostremoved_reads\thostremoved_frac\torphan_reads\torphan_frac\n')
 
 count_files = sys.argv[2:]
 
