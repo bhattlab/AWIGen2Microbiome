@@ -22,4 +22,18 @@ process metaphlan {
 	"""
 }
 
+process collate_metaphlan {
+	publishDir params.outdir + "/classification", mode: params.publish_mode
+
+	input:
+	path(metaphlan_res)
+
+	output:
+	path "metaphlan_all.tsv"
+	
+	script:
+	"""
+	combine_metaphlan.py $metaphlan_res > metaphlan_all.tsv
+	"""
+}
 
