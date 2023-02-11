@@ -18,5 +18,5 @@ def read_mpa(x):
 dfs = [read_mpa(f) for f in files_mpa]
 df_merged = reduce(lambda  left,right: pd.merge(left,right, on=['taxonomy'],
                                             how='outer'), dfs).fillna(0)
-df_merged.to_csv('metaphlan_all.tsv', sep="\t")
+df_merged.to_csv('metaphlan_all.tsv', sep="\t", index=False)
 
