@@ -9,7 +9,7 @@ process metaphlan {
 	path metaphlan_db_path
 
 	output:
-	path "metaphlan_${sample_id}.out"
+	path "metaphlan_${sample_id}.out", emit: metaphlan_res
 
 	script:
 	"""
