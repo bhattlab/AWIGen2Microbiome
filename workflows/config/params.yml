@@ -10,10 +10,12 @@ publish_mode: "copy"
 # One for the preprocessed reads
 # One for the classification results
 # One for the assemblies and bins?
-outdir: "./output_small"
+outdir: "./test_dataset"
 
 #########################################################################
 # Preprocessing parameters
+
+run_preprocessing: true
 
 # location of the host genome
 # Important! It needs to be indexed already
@@ -32,7 +34,7 @@ trimgalore_end_trim: 0
 
 run_motus: true
 run_metaphlan: true
-run_phanta: true
+run_phanta: false
 
 # parameters for mOTUs2
 motus_map_mgs_cutoff: 2
@@ -42,3 +44,11 @@ motus_min_len_align_length: 75
 metaphlan_db_path: "/labs/asbhatt/wirbel/utils/metaphlan_db/"
 
 # parameters for phanta
+
+
+#########################################################################
+# Assembly parameters?
+
+#########################################################################
+# Binning parameters?
+
