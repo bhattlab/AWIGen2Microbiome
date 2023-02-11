@@ -1,5 +1,6 @@
 process quast {
-  
+  tag "QUAST on $sample_id"
+
   input:
   tuple val(sample_id), path(contigs)
 
@@ -9,7 +10,7 @@ process quast {
   shell:
   """
   quast.py -o quast ${contigs} --fast
-  mv ./quast/transposed_report.tsv ./${sample_id}_report.tsv
+  mv ./quast/report.tsv ./${sample_id}_report.tsv
   """
 }
 
@@ -24,19 +25,9 @@ process combine_quast {
 	
 	shell:
 	"""
-	#!/bin/bash
-	set -u
-	set -e
-	
-	for f in $results
-	do
-		if [[ ! -f quast_report.tsv ]]
-		then
-			cat $f > quast_report.tsv
-		else
-			tail -n +2 $f >> quast_report.tsv
-		fi
-	done
+	mkdir -p quast_all
+	mv $results ./quast_all
+	combine_quast.py ./quast_all
 	"""
 }
 
