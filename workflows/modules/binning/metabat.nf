@@ -1,5 +1,4 @@
 process metabat {
-	publishDir params.outdir + "/binning/metabat/", pattern: 'metabat_*', mode: params.publish_mode	
 	tag "METABAT on $sample_id"
 
 	input:
@@ -7,7 +6,7 @@ process metabat {
 	tuple val(sample_id), path(depth)
 
 	output:
-	tuple val(sample_id), path("metabat_${sample_id}/"), emit: bins
+	tuple val(sample_id), path("metabat_${sample_id}/*fa"), emit: bins
 
 	script:
 	"""

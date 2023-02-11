@@ -1,5 +1,4 @@
 process maxbin {
-	publishDir params.outdir + "/binning/maxbin/", pattern: "maxbin_*", mode: params.publish_mode	
 	tag "MAXBIN on $sample_id"
 
 	input:
@@ -7,7 +6,7 @@ process maxbin {
 	tuple val(sample_id), path(depth)
 
 	output:
-	tuple val(sample_id), path("maxbin_${sample_id}/"), emit: bins
+	tuple val(sample_id), path("maxbin_${sample_id}/*.fasta"), emit: bins
 
 	script:
 	"""
