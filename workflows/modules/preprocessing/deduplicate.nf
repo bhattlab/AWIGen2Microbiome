@@ -5,7 +5,7 @@ process deduplicate {
     tuple val(sample_id), path(reads)
   
     output:
-    tuple val(sample_id), path("${sample_id}_R*.fastq.gz"), emit: reads
+    tuple val(sample_id), path("${sample_id}_R{1,2}.fastq.gz"), emit: reads
     tuple val(sample_id), path("counts_${sample_id}.txt"), emit: stats
 
     script:

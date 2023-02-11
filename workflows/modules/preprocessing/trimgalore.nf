@@ -9,7 +9,7 @@ process trimgalore {
     tuple val(sample_id), path(stats)
 
     output:
-    tuple val(sample_id), path("${sample_id}*val_*.fq.gz"), emit: reads
+    tuple val(sample_id), path("${sample_id}_{R1_val_1,R2_val_2,val_unpaired}.fq.gz"), emit: reads
     tuple val(sample_id), path("${stats}"), emit: stats
 
     script:
