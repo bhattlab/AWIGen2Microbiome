@@ -46,9 +46,12 @@ vignettes/*.pdf
 .nextflow*
 work/
 output/
-output_small*
+output_small/
+small_output/
+test_dataset/
 trace*
 *.html
+flowchart.png
 
 # Slurm
 *.err
