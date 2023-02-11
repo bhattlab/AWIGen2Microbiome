@@ -2,8 +2,9 @@
 
 nextflow.enable.dsl=2
 
-params.reads = "/labs/asbhatt/dmaghini/projects/awigen2/workflow_planning/00.test_samples/*_{1,2}.fq.gz"
+// params.reads = "/labs/asbhatt/dmaghini/projects/awigen2/workflow_planning/00.test_samples/*_{1,2}.fq.gz"
 // params.reads = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata/*{1,2}.fq.gz"
+params.reads = "./test_dataset/raw_data/*{1,2}.fq.gz"
 
 /* PREPROCESSING
  * Processes for fastqc, multiqc, and read processing, including
@@ -34,8 +35,18 @@ include { collate_metaphlan } from "./modules/classification/metaphlan"
 */
 
 include { megahit } from "./modules/assembly/megahit"
+include { prodigal } from "./modules/assembly/prodigal"
 include { quast } from "./modules/assembly/quast"
 include { combine_quast } from "./modules/assembly/quast"
+
+/* BINNING
+ * Runs metabat2 and maxbin on the contigs, then DAS tool (for later)
+ * Check quality by CheckM or sth (maybe others)?
+*/
+
+include { binning_prep } from "./modules/binning/binning_prep"
+include { metabat } from "./modules/binning/metabat"
+include { maxbin } from "./modules/binning/maxbin"
 
 workflow {
 	/* FIXME
@@ -61,23 +72,29 @@ workflow {
 	aggregatereports(host_remove_ch.stats.collect())
     
 	// CLASSIFICATION
-	motus_ch = motus(host_remove_ch.reads)
-	metaphlan_ch = metaphlan(host_remove_ch.reads, params.metaphlan_db_path)
-	// phanta_ch = phanta(host_remove_ch.reads)
-
-	// these results need to be collated as well
-	motus_all = collate_motus(motus_ch.motus_res.collect())
-	metaphlan_all = collate_metaphlan(metaphlan_ch.metaphlan_res.collect())
-
+	if (params.run_motus) {
+		motus_ch = motus(host_remove_ch.reads)
+		motus_all = collate_motus(motus_ch.motus_res.collect())
+	}
+	if (params.run_metaphlan) {
+		metaphlan_ch = metaphlan(host_remove_ch.reads, params.metaphlan_db_path)
+		metaphlan_all = collate_metaphlan(metaphlan_ch.metaphlan_res.collect())
+	}
+	// if (params.run_phanta) {
+	//	phanta_ch = phanta(host_remove_ch.reads)
+	//	phanta_all = collate_phanta(phanta_ch.phanta_res.collect())
+	// }
 
 	// ASSEMBLY
 	megahit_ch = megahit(host_remove_ch.reads)
 	quast_ch = quast(megahit_ch.contigs)
+	prodigal_ch = prodigal(megahit_ch.contigs)
 	quast_res_ch = combine_quast(quast_ch.quast_res.collect())
     
 	// BINNING
-	// metabat
-	// maxbin
+	binning_prep_ch = binning_prep(host_remove_ch.reads, megahit_ch.contigs)
+	metabat_bins_ch = metabat(megahit_ch.contigs, binning_prep_ch.depth)
+	maxbin_bins_ch = maxbin(megahit_ch.contigs, binning_prep_ch.depth)
 	// dastool
 	// checkm
 	// other things?
