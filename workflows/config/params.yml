@@ -44,7 +44,7 @@ motus_min_len_align_length: 75
 metaphlan_db_path: "/labs/asbhatt/wirbel/utils/metaphlan_db/"
 
 # parameters for phanta
-
+phanta_db_path: "/labs/asbhatt/data/program_indices/kraken2/humgut_mgv_human_refseq"
 
 #########################################################################
 # Assembly parameters?
