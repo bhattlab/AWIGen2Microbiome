@@ -1,14 +1,14 @@
 process dastool {
-	publishDir params.outdir + "/binning/dastool/", pattern: 'dastool_*', mode: params.publish_mode
+	publishDir params.outdir + "/binning/", pattern: 'dastool_*', mode: params.publish_mode
         tag "DASTool on $sample_id"
 
 	input:
-	tuple val(sample_id) path(metabat_bins)
+	tuple val(sample_id), path(metabat_bins)
 	tuple val(sample_id), path(maxbin_bins)
 	tuple val(sample_id), path(contigs)
 
 	output:
-	path("dastool_${sample_id}")
+	path 'dastool_${sample_id}'
 
 	script:
 	"""
