@@ -7,15 +7,14 @@ process phanta {
 	path phanta_db_path
 
 	output:
-	path('phanta_${sample_id}.out", emit: phanta_res
+	path('phanta_${sample_id}.out'), emit: phanta_res
 
 	script:
 	"""
-	kraken2 --db ${phanta_db_path} --threads ${task.cpus} --output phant_${sample_id}.krak \
+	kraken2 --db ${phanta_db_path} --threads ${task.cpus} --output phanta_${sample_id}.krak \
 		--report phanta_${sample_id}.out \
 		--report-minimizer-data --paired \
 		--gzip-compressed ${reads[0]} ${reads[1]} --confidence 0.1
-	# the rest of phanta needs to be implemented somehow differently, but at least we get the kraken reports this way
 	"""
 
 }
