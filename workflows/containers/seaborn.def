@@ -1,0 +1,8 @@
+Bootstrap: docker
+From: ghcr.io/jakob-wirbel/micromamba-focal-seaborn:latest
+
+%environment
+    export PATH=/opt/conda/bin:$PATH
+
+%help
+   This is the bhattlab container with pandas and seaborn installed (mostly for plotting and data wrangling).
