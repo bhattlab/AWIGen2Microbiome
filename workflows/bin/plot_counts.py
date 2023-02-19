@@ -1,4 +1,4 @@
-#!/opt/software/miniconda3/bin/python3
+#!/opt/conda/bin/python
 
 import sys
 import pandas as pd
