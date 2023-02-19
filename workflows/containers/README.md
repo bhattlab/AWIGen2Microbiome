@@ -1,91 +1,46 @@
-# Singularity containers for the nextflow workflow
+# Containers for the nextflow workflow
 
-This document described how singularity containers are build from .def files (described 
-in more detail [here](https://github.com/bhattlab/bhattlab_workflows/tree/master/containers/preprocessing))
-and how those are then published to the Sylab could, to be available independent of the
-file system.
+This folder holds the definition files for the containers used in the various
+workflows. The containers are then published and made available via the 
+Gihub package repository.
 
-## Preparations
 
-You will need an account with the [Sylabs could](https://cloud.sylabs.io/). You can just log in with your
-GitHub credentials and generate a new account.
+### Preparations
 
-#### Generate an access token
+Log into the package repository. You will need a classical access token that 
+you can generate [here](https://github.com/settings/tokens).
 
-In the [dashboard](https://cloud.sylabs.io/dashboard), you can generate an access token. Save this somewhere
-because you will not be able to see it again.
-
-#### Configuration file
-
-Next, you can configure your HPC system (in our case, the SCG cluster) to use the remote capabilities
-of the Sylabs cloud. To do so, generate a configuration file:
-```
-touch ~/.singularity/remote.yaml
-```
-and add these information:
-```
-Active: SylabsCloud
-Remotes:
-  SylabsCloud:
-    URI: cloud.sylabs.io
-    Token: <your access token>
-    System: true
-    Exclusive: false
+```bash
+echo <token> | docker login ghcr.io -u <user.name> --password-stdin
 ```
 
-#### Generate a keypair
+### Build a container
 
-You will also need a keypair to sign your container. You can do this via:
-```
-$ singularity key newpair
-Enter your name (e.g., John Doe) : John Doe
-Enter your email address (e.g., john.doe@example.com) : John.Doe@example.com
-Enter optional comment (e.g., development keys) : scs demo keys
-Enter a passphrase :
-Would you like to push it to the keystore? [Y,n] y
-Generating Entity and OpenPGP Key Pair... done
-Key successfully pushed to keystore
+To build the container, you will need Docker running on your local machine (typically your laptop).
+
+```bash
+docker build --platform=linux/amd64 -t <container_name> - < <dockerfile>
 ```
 
-## Build a container
-
-Now you can use the remote build capacities of the Syslabs cloud to build the container that you have
-previously generated via Docker 
-(see [these instructions](https://github.com/bhattlab/bhattlab_workflows/tree/master/containers/preprocessing)).
-
-```
-singularity build --remote <image> <def>
-```
-For the preprocessing container, it would look something like that:
-```
-singularity build --remote bhattlab-micromamba-preprocessing.img preprocessing.def
+For example, the container for the classification part of the workflow, containing `mOTUs3`, `MetaPhlAn4`, and `Kraken2`, you could build like that:
+```bash
+docker build --platform=linux/amd64 -t ghcr.io/jakob-wirbel/micromamba-focal-classification - < Dockerfile_classification
 ```
 
-## Sign a container
+### Publish it
 
-To publish the container, it will have to be signed. You can sign it with this command:
+Now you are ready to publish the container. You will have to first push it:
+```bash
+docker push <container_name>:<tag>
 ```
-$ singularity sign <image>
-Enter encryption passphrase :
-```
-This container can then also be verified via singularity:
-```
-singularity verify <image>
-```
-
-## Publish via Sylabs
-
-Finally, you can upload your container to the Sylabs cloud, where it then can be published so that it is
-available for other people as well:
-
-```
-singularity push <image> library://<user>/<repo>/<image>:<tag>
-```
+Then you have to go to the `Settings` of the package on [github.com](github.com/) and make it public.
 
 
-For me (wirbel), and for the preprocessing container, the command would look like this:
-```
-singularity push bhattlab-micromamba-preprocessing.img library://wirbel/bhattlab/bhattlab-micromamba-preprocessing.sif:v0.2
-```
+## Singularity alternative
 
+Alternatively, we started with building singularity containers from the
+Docker containers published via Github and publishing the Singularity image
+via the [sylabs.could.io](https://sylabs.cloud.io) Website.
 
+How this is/was done is described in the `./singularity/` subfolder within
+this directory.
