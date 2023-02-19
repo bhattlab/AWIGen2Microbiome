@@ -3,6 +3,7 @@ process aggregatereports {
 
   input:
   path(stats)
+  val(read_info)
 
   output:
   path('read_counts.tsv')
@@ -15,6 +16,9 @@ process aggregatereports {
   
   get_counts.py read_counts.tsv $stats
   plot_counts.py read_counts.tsv
+
+  echo $read_info
+
   """
 }
 
