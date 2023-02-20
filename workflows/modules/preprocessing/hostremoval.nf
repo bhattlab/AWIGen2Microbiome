@@ -11,6 +11,7 @@ process hostremoval {
     output:
     tuple val(sample_id), path("${sample_id}_cleaned_{1,2,orphans}.fastq.gz"), emit: reads
     path("${stats}"), emit: stats
+    path("${sample_id}.location"), emit: read_loc
 
     script:
     """
@@ -27,6 +28,7 @@ process hostremoval {
     totalcount=\$(echo \$((\$readcount_paired + \$readcount_unpaired)))
     echo ${sample_id}"\trmhost\t"\$totalcount >> "${stats}"
     echo ${sample_id}"\torphans\t"\${readcount_unpaired} >> "${stats}"
+    echo "${sample_id},${params.outdir}/preprocessed_reads/${reads[0]},${params.outdir}/preprocessed_reads/${reads[1]},${params.outdir}/preprocessed_reads/${reads[2]}" > ${sample_id}.location
     """
 
 }

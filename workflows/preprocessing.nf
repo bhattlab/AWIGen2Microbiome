@@ -39,7 +39,7 @@ workflow {
 					params.bwa_index_base)
 	postfastqc_ch = postfastqc(host_remove_ch.reads)
 	postmultiqc(postfastqc_ch.collect())
-	aggregatereports(host_remove_ch.stats.collect(), host_remove_ch.reads.collect())
+	aggregatereports(host_remove_ch.stats.collect(), host_remove_ch.read_loc.collect())
 }
 
 workflow.onComplete {

@@ -3,7 +3,7 @@ process aggregatereports {
 
   input:
   path(stats)
-  val(read_info)
+  path(read_location)
 
   output:
   path('read_counts.tsv')
@@ -19,11 +19,7 @@ process aggregatereports {
   plot_counts.py read_counts.tsv
 
   echo "Sample ID, Forward, Reverse, Orphans" > preprocessed_reads.csv
-  for tuple in \$(cat $read_info)
-  do
-    echo "\${tuple[0]},\${tuple[1]},\${tuple[2]},\${tuple[3]}" >> preprocessed_reads.csv
-  done
-
+  cat $read_location >> preprocessed_reads.csv
   """
 }
 
