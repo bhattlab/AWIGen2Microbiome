@@ -7,6 +7,7 @@ process motus {
 
 	input:
 	tuple val(sample_id), path(reads)
+	path(motus_db_path)
 
 	output:
 	path "motus_${sample_id}.out", emit: motus_res
@@ -14,6 +15,7 @@ process motus {
 	script:
 	"""
 	motus profile -n ${sample_id} -t $task.cpus -c \
+		-db ${motus_db_path} \
 		-l ${params.motus_min_len_align_length} -g ${params.motus_map_mgs_cutoff} \
 		-f ${reads[0]} -r ${reads[1]} -s ${reads[2]} -o motus_${sample_id}.out
 	"""
