@@ -9,14 +9,14 @@ params.reads = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata/*{1,2}.fq.
  * deduplication, trimming, human read removal
 */
 
-include { fastqc } from  "./modules/preprocessing/fastqc"
-include { postfastqc } from "./modules/preprocessing/fastqc"
-include { multiqc } from "./modules/preprocessing/multiqc"
-include { postmultiqc } from "./modules/preprocessing/multiqc"
-include { deduplicate } from "./modules/preprocessing/deduplicate"
-include { trimgalore } from "./modules/preprocessing/trimgalore"
-include { hostremoval } from "./modules/preprocessing/hostremoval"
-include { aggregatereports } from "./modules/preprocessing/aggregate"
+include { fastqc } from  './modules/preprocessing/fastqc'
+include { postfastqc } from './modules/preprocessing/fastqc'
+include { multiqc } from './modules/preprocessing/multiqc'
+include { postmultiqc } from './modules/preprocessing/multiqc'
+include { deduplicate } from './modules/preprocessing/deduplicate'
+include { trimgalore } from './modules/preprocessing/trimgalore'
+include { hostremoval } from './modules/preprocessing/hostremoval'
+include { aggregatereports } from './modules/preprocessing/aggregate'
 
 workflow {
 	/* FIXME
@@ -26,20 +26,20 @@ workflow {
 	*/
 	Channel
 		.fromFilePairs(params.reads, checkIfExists: true)
-		.set { read_pairs_ch }
+		.set { ch_read_pairs }
 
 	// PREPROCESSING
-	fastqc_ch = fastqc(read_pairs_ch)
-	multiqc(fastqc_ch.collect())
-	deduplicated_ch = deduplicate(read_pairs_ch)
-	trim_galore_ch = trimgalore(deduplicated_ch.reads, deduplicated_ch.stats)
-	host_remove_ch = hostremoval(trim_galore_ch.reads, 
-					trim_galore_ch.stats, 
+	ch_fastqc = fastqc(ch_read_pairs)
+	multiqc(ch_fastqc.collect())
+	ch_deduplicated = deduplicate(ch_read_pairs)
+	ch_trim_galore = trimgalore(ch_deduplicated.reads, ch_deduplicated.stats)
+	ch_host_remove = hostremoval(ch_trim_galore.reads, 
+					ch_trim_galore.stats, 
 					params.host_genome_location, 
 					params.bwa_index_base)
-	postfastqc_ch = postfastqc(host_remove_ch.reads)
-	postmultiqc(postfastqc_ch.collect())
-	aggregatereports(host_remove_ch.stats.collect(), host_remove_ch.read_loc.collect())
+	ch_postfastqc = postfastqc(ch_host_remove.reads)
+	postmultiqc(ch_postfastqc.collect())
+	aggregatereports(ch_host_remove.stats.collect(), ch_host_remove.read_loc.collect())
 }
 
 workflow.onComplete {
