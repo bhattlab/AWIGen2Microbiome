@@ -80,6 +80,16 @@ cd db_mOTU
 sed -i 's/2.6.0/3.0.3/g' db_mOTU_versions
 ```
 
+#### Phanta database
+
+For running [Phanta](https://github.com/bhattlab/phanta), please note that 
+Phanta was developed as a Snakemake workflow and the port to Nextflow is a
+bit hacky. As of yet, it is pretty unclear if we will want to include it in 
+the final analysis. If you want to run it, you will need a Kraken2 database. 
+[Here](https://github.com/bhattlab/phanta/blob/main/databases.md) is a list of
+databases that are made available with the tool. You can download and extract
+the tarball following the documentation for the tool.
+
 ## Running the workflows
 
 To run the workflow, you need Java and Nextflow running in your system. On an 

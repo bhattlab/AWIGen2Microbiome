@@ -14,8 +14,6 @@ outdir: "/labs/asbhatt/wirbel/AWIgen2/output_small"
 #########################################################################
 # Preprocessing parameters
 
-run_preprocessing: true
-
 # location of the host genome
 # Important! It needs to be indexed already
 host_genome_location: "/labs/asbhatt/wirbel/utils/host_genome/hg38/"
@@ -27,17 +25,17 @@ trimgalore_min_read_length: 60
 trimgalore_start_trim: 0
 trimgalore_end_trim: 0
 
-
 #########################################################################
 # Classification parameters
 
-run_motus: false
-run_metaphlan: false
+run_motus: true
+run_metaphlan: true
 run_phanta: false
 
 # parameters for mOTUs2
 motus_map_mgs_cutoff: 2
 motus_min_len_align_length: 75
+motus_db_path: "/labs/asbhatt/wirbel/utils/db_mOTU/"
 
 # parameters for metaphlan
 metaphlan_db_path: "/labs/asbhatt/wirbel/utils/metaphlan_db/"
