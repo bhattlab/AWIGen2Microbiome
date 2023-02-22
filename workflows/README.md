@@ -108,5 +108,6 @@ ssub -m 6 -t 8 -n nextflow_preprocessing "nextflow run preprocessing.nf -c confi
 
 The other workflows can then be run after the preprocessing step is done:
 ```bash
-ssub -m 6 -t 8 -n nextflow_classification "nextflow run classification.nf -c config/run_classification.config -params-file config/params.yml -with-trace -with-report"
+ssub -m 6 -t 8 -n nextflow_classification "nextflow run classification.nf -c config/run_classification.config -params-file config/params.yml -with-trace -with-report --input <path-to-stats-read-csv>"
+ssub -m 6 -t 8 -n nextflow_assembly "nextflow run assembly_binning.nf -c config/run_assembly.config -params-file config/params.yml -with-trace -with-report --input <path-to-stats-read-csv>"
 ```
