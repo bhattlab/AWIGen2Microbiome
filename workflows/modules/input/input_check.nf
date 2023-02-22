@@ -1,6 +1,10 @@
 // workflow to read a CSV file with sample names and read files
 // and emit them as tuples for downstream analysis
 
+def hasExtension(it, extension) {
+    it.toString().toLowerCase().endsWith(extension.toLowerCase())
+}
+
 workflow input_check {
     main:
     if(hasExtension(params.input, "csv")){
