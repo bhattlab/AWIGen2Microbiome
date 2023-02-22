@@ -28,7 +28,7 @@ process hostremoval {
     totalcount=\$(echo \$((\$readcount_paired + \$readcount_unpaired)))
     echo ${sample_id}"\trmhost\t"\$totalcount >> "${stats}"
     echo ${sample_id}"\torphans\t"\${readcount_unpaired} >> "${stats}"
-    echo "${sample_id},${params.outdir}/preprocessed_reads/${reads[0]},${params.outdir}/preprocessed_reads/${reads[1]},${params.outdir}/preprocessed_reads/${reads[2]}" > ${sample_id}.location
+    echo "${sample_id},${params.outdir}/preprocessed_reads/${sample_id}_cleaned_1.fastq.gz,${params.outdir}/preprocessed_reads/${sample_id}_cleaned_2.fastq.gz,${params.outdir}/preprocessed_reads/${sample_id}_cleaned_orphans.fastq.gz" > ${sample_id}.location
     """
 
 }
