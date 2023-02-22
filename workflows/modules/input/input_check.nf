@@ -14,10 +14,10 @@ workflow input_check {
             .splitCsv(header: true)
             .map { row ->
                     if (row.size() == 4) {
-                        def sampleid = row.SampleID
-                        def forward = row.Forward ? file(row.Forward, checkIfExists: true) : false
-                        def reverse = row.Reverse ? file(row.Reverse, checkIfExists: true) : false
-                        def orphans = row.Orphans ? file(row.Orphans, checkIfExists: true) : false
+                        def sampleid = row.sampleID
+                        def forward = row.forward ? file(row.forward, checkIfExists: true) : false
+                        def reverse = row.reverse ? file(row.reverse, checkIfExists: true) : false
+                        def orphans = row.orphans ? file(row.orphans, checkIfExists: true) : false
                         // Check if given combination is valid
                         if (!forward) exit 1, "Invalid input samplesheet: Forward can not be empty."
                         if (!reverse) exit 1, "Invalid input samplesheet: Reverse can not be empty."
@@ -29,12 +29,12 @@ workflow input_check {
              }
         ch_reads = ch_input
             .map { sampleid, forward, reverse, orphans ->
-                        def meta = [:]
-                        return [ sampleid, [ sr1, sr2 ] ]
+                        return [ sampleid, [ forward, reverse, orphans ] ]
                 }
-        emit:
-        reads = ch_reads
     } else {
-        exit 1, "Input samplesheet should be a csv file organised like this:\n\nSampleID,Forward,Reverse,Orphans"
+        exit 1, "Input samplesheet should be a csv file organised like this:\n\nsampleID,forward,reverse,orphans"
     }
+   
+    emit:
+    reads = ch_reads
 }

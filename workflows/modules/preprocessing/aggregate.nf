@@ -18,7 +18,7 @@ process aggregatereports {
   get_counts.py read_counts.tsv $stats
   plot_counts.py read_counts.tsv
 
-  echo "SampleID, Forward, Reverse, Orphans" > preprocessed_reads.csv
+  echo "sampleID,forward,reverse,orphans" > preprocessed_reads.csv
   cat $read_location >> preprocessed_reads.csv
   """
 }

@@ -22,7 +22,7 @@ workflow {
 	// CLASSIFICATION
 	if (params.run_motus) {
 		ch_motus = motus(ch_processed_reads.reads, params.motus_db_path)
-		ch_all_motus = collate_motus(ch_motus.motus_res.collect())
+		ch_all_motus = collate_motus(ch_motus.motus_res.collect(), params.motus_db_path)
 	}
 	if (params.run_metaphlan) {
 		ch_metaphlan = metaphlan(ch_processed_reads.reads, params.metaphlan_db_path)

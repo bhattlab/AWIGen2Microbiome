@@ -26,6 +26,7 @@ process collate_motus {
 
 	input:
 	path(motus_res)
+	path(motus_db_path)
 
 	output:
 	path "motus_all.tsv"
@@ -35,7 +36,7 @@ process collate_motus {
 	mkdir -p tmp
 	
 	mv $motus_res ./tmp
-	motus merge -o motus_all.tsv -d ./tmp
+	motus merge -o motus_all.tsv -d ./tmp -db ${motus_db_path}
 	"""
 }
 
