@@ -29,7 +29,7 @@ workflow {
 		ch_all_metaphlan = collate_metaphlan(ch_metaphlan.metaphlan_res.collect())
 	}
 	if (params.run_phanta) {
-		ch_phanta = phanta(ch_processed_reads.reads)
+		ch_phanta = phanta(ch_processed_reads.reads, params.phanta_db_path)
 	//	ch_all_phanta = collate_phanta(ch_phanta.phanta_res.collect())
 	}
 }
