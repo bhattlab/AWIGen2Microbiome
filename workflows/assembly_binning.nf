@@ -31,16 +31,16 @@ workflow {
 	// Input
 	ch_processed_reads = input_check()
 	// ASSEMBLY
-	megahit_ch = megahit(host_remove_ch.reads)
-	quast_ch = quast(megahit_ch.contigs)
-	prodigal_ch = prodigal(megahit_ch.contigs)
-	quast_res_ch = combine_quast(quast_ch.quast_res.collect())
+	ch_megahit = megahit(ch_processed_reads.reads)
+	ch_quast = quast(ch_megahit.contigs)
+	ch_prodigal = prodigal(ch_megahit.contigs)
+	ch_quast_res = combine_quast(ch_quast.quast_res.collect())
     
 	// BINNING
-	binning_prep_ch = binning_prep(host_remove_ch.reads, megahit_ch.contigs)
-	metabat_bins_ch = metabat(megahit_ch.contigs, binning_prep_ch.depth)
-	maxbin_bins_ch = maxbin(megahit_ch.contigs, binning_prep_ch.depth)
-	dastool_ch = dastool(metabat_bins_ch.bins, maxbin_bins_ch.bins, megahit_ch.contigs)
+	ch_binning_prep = binning_prep(ch_processed_reads.reads, ch_megahit.contigs)
+	ch_metabat_bins = metabat(ch_megahit.contigs, ch_binning_prep.depth)
+	ch_maxbin_bins = maxbin(ch_megahit.contigs, ch_binning_prep.depth)
+	ch_dastool = dastool(ch_metabat_bins.bins, ch_maxbin_bins.bins, ch_megahit.contigs)
 
 	// checkm
 	// other things?
