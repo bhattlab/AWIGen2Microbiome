@@ -9,7 +9,7 @@ publish_mode: "copy"
 #### Attention: This should NOT be a relative path
 #### Make it an absolute path so that you can use the different workflows
 #### together.
-outdir: "/labs/asbhatt/wirbel/AWIgen2/output_small"
+outdir: "/labs/asbhatt/wirbel/AWIgen2/nextflow/test_dataset"
 
 #########################################################################
 # Preprocessing parameters
@@ -30,7 +30,7 @@ trimgalore_end_trim: 0
 
 run_motus: true
 run_metaphlan: true
-run_phanta: false
+run_phanta: true
 
 # parameters for mOTUs2
 motus_map_mgs_cutoff: 2
