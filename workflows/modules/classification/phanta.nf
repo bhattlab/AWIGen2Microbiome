@@ -7,7 +7,7 @@ process phanta {
 	path phanta_db_path
 
 	output:
-	path('phanta_${sample_id}.out'), emit: phanta_res
+	path "phanta_${sample_id}.out", emit: phanta_res
 
 	script:
 	"""
