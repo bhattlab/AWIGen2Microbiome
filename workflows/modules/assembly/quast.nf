@@ -26,7 +26,7 @@ process combine_quast {
 	shell:
 	"""
 	mkdir -p quast_all
-	mv $results ./quast_all
+	mv *report.tsv ./quast_all
 	combine_quast.py ./quast_all
 	"""
 }
