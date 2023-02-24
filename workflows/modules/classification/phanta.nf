@@ -1,6 +1,6 @@
 process phanta {
-	publishDir params.outdir + "/classification/phanta", mode: params.publish_mode
-        tag "PHANTA for $sample_id"
+  publishDir params.outdir + "/classification/phanta", mode: params.publish_mode
+  tag "PHANTA for $sample_id"
 	
 	input:
 	tuple val(sample_id), path(reads)
@@ -15,7 +15,11 @@ process phanta {
 		--report phanta_${sample_id}.out \
 		--report-minimizer-data --paired \
 		--gzip-compressed ${reads[0]} ${reads[1]} --confidence 0.1
+
+	phanta_filter_kraken.py phanta_${sample_id}.out ${phanta_db_path}
+	# bracken
 	"""
 
 }
+
 
