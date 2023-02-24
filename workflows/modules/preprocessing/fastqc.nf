@@ -11,7 +11,7 @@ process fastqc {
     script:
     """
     mkdir prefastqc_${sample_id}_logs
-    fastqc -o prefastqc_${sample_id}_logs -f fastq -q ${reads}
+    fastqc -o prefastqc_${sample_id}_logs -f fastq -q ${reads} -t ${task.cpus}
     """
 }
 
@@ -28,6 +28,6 @@ process postfastqc{
     script:
     """
     mkdir postfastqc_${sample_id}_logs
-    fastqc -o postfastqc_${sample_id}_logs -f fastq -q ${reads}
+    fastqc -o postfastqc_${sample_id}_logs -f fastq -q ${reads} -t ${task.cpus}
     """
 }
