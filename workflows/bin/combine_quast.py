@@ -14,7 +14,7 @@ def read_quast(x):
     temp.rename(columns={'Assembly': 'stats', temp.columns[1]: sample}, inplace=True)
     return(temp)
 
-dfs = [read_mpa(f) for f in files_mpa]
+dfs = [read_quast(f) for f in files_quast]
 df_merged = reduce(lambda  left,right: pd.merge(left,right, on=['stats'],
                                             how='outer'), dfs).fillna(0)
 df_merged.to_csv('quast_report.tsv', sep="\t", index=False)
