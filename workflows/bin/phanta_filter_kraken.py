@@ -1,14 +1,12 @@
 #!/opt/conda/bin/python
 
 import sys
-import os
 import numpy as np
 import pandas as pd
 
-
-
 kraken_report = sys.argv[1]
 kraken_db = sys.argv[2]
+filter_threshold = int(sys.arv[3])
 
 kraken_file = pd.read_csv(kraken_report, sep="\t", 
 	names=['fraction','fragments', 'assigned','minimizers','uniqminimizers', 
@@ -54,4 +52,12 @@ kraken_file.loc[kraken_file['classification_rank'].str.startswith('S', na=False)
 kraken_file = kraken_file[kraken_file['species_keep'].isin(species_keep)]
 del kraken_file['species']
 del kraken_file['species_keep']
-kraken_file.to_csv(kraken_report + '.filtered', sep="\t")
+kraken_file.to_csv(kraken_report + '.filtered', sep="\t", index=False)
+
+# check if braken would fail
+# if yes, make output files and skip braken
+temp = kraken_file.loc[kraken_file['classification_rank'].str.startswith('S', na=False),]
+temp = temp.loc[temp['fragments'] >= filter_threshold,]
+if temp.shape[0] == 0:
+	with open(kraken_report+'.bracken', 'w') as outfile:
+		pass

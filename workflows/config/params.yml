@@ -42,6 +42,8 @@ metaphlan_db_path: "/labs/asbhatt/wirbel/utils/metaphlan_db/"
 
 # parameters for phanta
 phanta_db_path: "/labs/asbhatt/data/program_indices/kraken2/humgut_mgv_human_refseq"
+phanta_readlen: 150
+phanta_threshold: 10
 
 #########################################################################
 # Assembly parameters?
