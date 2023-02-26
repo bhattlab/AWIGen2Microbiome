@@ -14,6 +14,7 @@ include { collate_motus } from './modules/classification/motus'
 include { metaphlan } from './modules/classification/metaphlan'
 include { collate_metaphlan } from './modules/classification/metaphlan'
 include { phanta } from './modules/classification/phanta'
+include { collate_phanta } from './modules/classification/phanta'
 
 workflow {
 
@@ -30,7 +31,7 @@ workflow {
 	}
 	if (params.run_phanta) {
 		ch_phanta = phanta(ch_processed_reads.reads, params.phanta_db_path)
-	//	ch_all_phanta = collate_phanta(ch_phanta.phanta_res.collect())
+		ch_all_phanta = collate_phanta(ch_phanta.phanta_res.collect())
 	}
 }
 

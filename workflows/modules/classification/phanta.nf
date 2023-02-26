@@ -22,7 +22,7 @@ process phanta {
 
 	if [ ! -f phanta_${sample_id}.out.bracken ]
 	then
-		bracken -d {phanta_db_path} \
+		bracken -d ${phanta_db_path} \
 			-i phanta_${sample_id}.out.filtered \
     	-o phanta_${sample_id}.brack \
     	-w phanta_${sample_id}.out.bracken \
