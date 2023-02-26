@@ -18,8 +18,9 @@ def read_bracken(x):
 	sample = x.removesuffix('.out.bracken').removeprefix('phanta_')
 	# get the kraken/bracken output
 	# check if the file is empty!
-	if True:
-		kraken_file = pd.read_csv(kraken_out_dir + '/phanta_' + sample + '.out', 
+	filesize = os.stat(x).st_size
+	if filesize==0:
+		kraken_file = pd.read_csv(kraken_out_dir + '/phanta_' + sample + '.out.filtered', 
 			sep="\t", 
 			names=['fraction','fragments', 'assigned', 'rank', 
 			'minimizers','uniqminimizers',
@@ -58,11 +59,11 @@ def read_bracken(x):
 
 		# return only what is needed
 		temp = bracken_red[['name', 'fragments']]
-	    
-	    temp.rename(columns={'name': 'taxonomy', 'fragments': sample}, inplace=True)
+		
+		temp.rename(columns={'name': 'taxonomy', 'fragments': sample}, inplace=True)
 
-	    # add non-resolved reads from kraken as unclassified
-	    kraken_file = pd.read_csv(kraken_out_dir + '/phanta_' + sample + '.out', 
+		# add non-resolved reads from kraken as unclassified
+		kraken_file = pd.read_csv(kraken_out_dir + '/phanta_' + sample + '.out.filtered', 
 			sep="\t", 
 			names=['fraction','fragments', 'assigned', 'rank', 
 			'minimizers','uniqminimizers',
@@ -72,12 +73,12 @@ def read_bracken(x):
 			sample: [all_reads - all_bracken_reads ]})
 		temp = pd.concat([temp, temp_uncl])
 
-    return(temp)
+	return(temp)
 
 
 files_bracken = os.listdir(bracken_out_dir)
 
 dfs = [read_bracken(f) for f in files_bracken]
 df_merged = reduce(lambda  left,right: pd.merge(left,right, on=['taxonomy'],
-                                            how='outer'), dfs).fillna(0)
+	how='outer'), dfs).fillna(0)
 df_merged.to_csv('phanta_all.tsv', sep="\t", index=False)
