@@ -8,24 +8,20 @@ RUN apt-get update && \
   dpkg-reconfigure -f noninteractive tzdata
 USER $MAMBA_USER
 
-RUN <<EOF cat > prodigal.yml
-name: prodigal
+RUN <<EOF cat > binning.yml
+name: binning
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
 dependencies:
-  - prodigal=2.6.3
-  - pplacer=1.1.alpha19
-  - hmmer=3.3.2
-  - numpy=1.24.2
-  - matplotlib-base=3.7.0
-  - pysam=0.20.0
-  - python=3.10.8
+  - metabat2=2.15
+  - bwa=0.7.17
+  - samtools=1.16.1
+  - maxbin2=2.2.7
+  - das_tool=1.1.6
 EOF
 
-RUN micromamba install -y -n base -f prodigal.yml && \
+RUN micromamba install -y -n base -f binning.yml && \
   micromamba clean --all --yes
 
 ENV PATH "/opt/conda/bin:$PATH"
-
-RUN pip3 install checkm-genome
