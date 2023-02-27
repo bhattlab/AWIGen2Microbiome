@@ -90,6 +90,22 @@ the final analysis. If you want to run it, you will need a Kraken2 database.
 databases that are made available with the tool. You can download and extract
 the tarball following the documentation for the tool.
 
+#### CheckM database
+
+You will also need to download the database for checkM. This is available through 
+Zenodo as well and can be downloaded and extracted like that:
+```bash
+
+cd <your-checkm-database-location>
+wget https://zenodo.org/record/7401545/files/checkm_data_2015_01_16.tar.gz
+md5sum checkm_data_2015_01_16.tar.gz
+# expected output: 631012fa598c43fdeb88c619ad282c4d
+# if you do not see this output, something went wrong and you need to download
+# the database again!
+tar -zxvf checkm_data_2015_01_16.tar.gz
+rm checkm_data_2015_01_16.tar.gz
+```
+
 ## Running the workflows
 
 To run the workflow, you need Java and Nextflow running in your system. On an 
