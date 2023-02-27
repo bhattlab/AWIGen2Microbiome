@@ -19,6 +19,7 @@ dependencies:
   - samtools=1.16.1
   - maxbin2=2.2.7
   - das_tool=1.1.6
+  - concoct=1.1.0
 EOF
 
 RUN micromamba install -y -n base -f binning.yml && \
