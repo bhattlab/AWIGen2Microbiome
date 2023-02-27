@@ -24,8 +24,9 @@ include { combine_quast } from './modules/assembly/quast'
 include { binning_prep } from './modules/binning/binning_prep'
 include { metabat } from './modules/binning/metabat'
 include { maxbin } from './modules/binning/maxbin'
+include { concoct } from './modules/binning/concoct'
 include { dastool } from './modules/binning/dastool'
-
+include { checkm } from './modules/binning/checkm'
 
 workflow {
 
@@ -40,16 +41,26 @@ workflow {
     
 	// BINNING
 	ch_binning_prep = binning_prep(ch_processed_reads.reads, ch_megahit.contigs)
-	ch_binning = ch_binning_prep.concat(ch_megahit.contigs).groupTuple()
+	ch_binning = ch_binning_prep.depth
+		.concat(ch_megahit.contigs)
+		.groupTuple()
 	
 	ch_metabat_bins = metabat(ch_binning)
 	ch_maxbin_bins = maxbin(ch_binning)
+	ch_binning_concoct = ch_binning_prep.idx
+		.concat(ch_megahit.contigs)
+		.groupTuple()
+	ch_concoct_bins = concoct(ch_binning_concoct)
 	
 	// combine the metabat, maxbin, contigs channels
-	ch_final = ch_metabat_bins.bins.concat(ch_maxbin_bins.bins).concat(ch_megahit.contigs).groupTuple()
+	ch_final = ch_metabat_bins.bins
+		.concat(ch_maxbin_bins.bins)
+		.concat(ch_concoct_bins.bins)
+		.concat(ch_megahit.contigs).groupTuple()
 	ch_dastool = dastool(ch_final)
 
 	// checkm
+	ch_checkm = checkm(ch_dastool.bins, params.checkm_db_path)
 	// other things?
 }
 
