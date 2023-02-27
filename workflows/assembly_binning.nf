@@ -46,7 +46,8 @@ workflow {
 	ch_maxbin_bins = maxbin(ch_binning)
 	
 	// combine the metabat, maxbin, contigs channels
-	// ch_dastool = dastool(ch_metabat_bins.bins, ch_maxbin_bins.bins, ch_megahit.contigs)
+	ch_final = ch_metabat_bins.bins.concat(ch_maxbin_bins.bins).concat(ch_megahit.contigs).groupTuple()
+	ch_dastool = dastool(ch_final)
 
 	// checkm
 	// other things?
