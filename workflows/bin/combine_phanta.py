@@ -13,8 +13,8 @@ tax_dict ={'species':'S', 'genus':'G','family':'F',
 	'order':'O','class':'C','phylum':'P','kingdom':'D'}
 tax_levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 
-bracken_out_dir = sys.argv[1]
-kraken_out_dir = sys.argv[2]
+bracken_out_dir = sys.argv[1] + '/'
+kraken_out_dir = sys.argv[2] + '/'
 
 def read_bracken(x):
 	sample = x.removesuffix('.out.bracken').removeprefix('phanta_')
