@@ -51,3 +51,4 @@ phanta_threshold: 10
 #########################################################################
 # Binning parameters?
 
+checkm_db_path: "/labs/asbhatt/wirbel/utils/db_checkm"
