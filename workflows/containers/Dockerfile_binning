@@ -19,6 +19,7 @@ dependencies:
   - samtools=1.16.1
   - maxbin2=2.2.7
   - das_tool=1.1.6
+  - scikit-learn=1.1.0
   - concoct=1.1.0
 EOF
 
