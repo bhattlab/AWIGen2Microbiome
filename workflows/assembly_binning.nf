@@ -35,9 +35,9 @@ workflow {
 	// ASSEMBLY
 	// ch_megahit = megahit(ch_processed_reads.reads)
 	ch_megahit = input_assembly()
-	ch_quast = quast(ch_megahit.contigs)
-	ch_prodigal = prodigal(ch_megahit.contigs)
-	ch_quast_res = combine_quast(ch_quast.quast_res.collect())
+	// ch_quast = quast(ch_megahit.contigs)
+	// ch_prodigal = prodigal(ch_megahit.contigs)
+	// ch_quast_res = combine_quast(ch_quast.quast_res.collect())
     
 	// BINNING
 	ch_binning_prep = binning_prep(ch_processed_reads.reads, ch_megahit.contigs)
@@ -47,7 +47,7 @@ workflow {
 	
 	ch_metabat_bins = metabat(ch_binning)
 	ch_maxbin_bins = maxbin(ch_binning)
-	ch_binning_concoct = ch_binning_prep.idx
+	ch_binning_concoct = ch_binning_prep.bam
 		.concat(ch_megahit.contigs)
 		.groupTuple()
 	ch_concoct_bins = concoct(ch_binning_concoct)
