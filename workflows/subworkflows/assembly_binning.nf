@@ -22,7 +22,6 @@ include { dastool } from '../modules/binning/dastool'
 include { checkm } from '../modules/binning/checkm'
 
 workflow assembly_binning {
-
     take:
         input //channel: tuple: val(sample_id), path(reads)
 
@@ -33,23 +32,16 @@ workflow assembly_binning {
     ch_prodigal = prodigal(ch_megahit.contigs)
 
     ch_binning_prep = binning_prep(input, ch_megahit.contigs)
-    ch_binning = ch_binning_prep.depth
-        .concat(ch_megahit.contigs)
-        .groupTuple()
-    
-    ch_metabat_bins = metabat(ch_binning)
-    ch_maxbin_bins = maxbin(ch_binning)
-    ch_binning_concoct = ch_binning_prep.bam
-        .concat(ch_megahit.contigs)
-        .groupTuple()
-    ch_concoct_bins = concoct(ch_binning_concoct)
+
+    ch_metabat_bins = metabat(ch_megahit.contigs, ch_binning_prep.depth)
+    ch_maxbin_bins = maxbin(ch_megahit.contigs, ch_binning_prep.depth)
+    ch_concoct_bins = concoct(ch_megahit.contigs, ch_binning_prep.bam)
 
     // combine the metabat, maxbin, contigs channels
-    ch_final = ch_metabat_bins.bins
-        .concat(ch_maxbin_bins.bins)
-        .concat(ch_concoct_bins.bins)
-        .concat(ch_megahit.contigs).groupTuple()
-    ch_dastool = dastool(ch_final)
+    ch_dastool = dastool(ch_megahit.contigs,
+        ch_metabat_bins.bins, 
+        ch_maxbin_bins.bins,
+        ch_concoct_bins.bins)
 
     // checkm
     ch_checkm = checkm(ch_dastool.bins, params.checkm_db_path)

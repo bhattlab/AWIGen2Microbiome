@@ -3,7 +3,8 @@ process maxbin {
 	tag "MAXBIN on $sample_id"
 
 	input:
-	tuple val(sample_id), path(info)
+	tuple val(sample_id), path(contigs)
+	tuple val(sample_id), path(depth)
 
 	output:
 	tuple val(sample_id), path("maxbin_${sample_id}/"), emit: bins
@@ -12,8 +13,8 @@ process maxbin {
 	"""
 	# adjust the depth file
 	mkdir -p maxbin_${sample_id}
-	cut -f 1,4 ${info[0]} | tail -n +2 > ${info[0]}.adjusted
-	run_MaxBin.pl -contig ${info[1]} -out maxbin_${sample_id}/maxbin_bins \
-		-abund ${info[0]}.adjusted -thread $task.cpus || true
+	cut -f 1,4 ${depth} | tail -n +2 > ${depth}.adjusted
+	run_MaxBin.pl -contig ${contigs} -out maxbin_${sample_id}/maxbin_bins \
+		-abund ${depth}.adjusted -thread $task.cpus || true
 	"""
 }
