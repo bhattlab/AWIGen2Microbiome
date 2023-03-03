@@ -2,8 +2,6 @@
 
 nextflow.enable.dsl=2
 
-params.reads = "/labs/asbhatt/dmaghini/tools/nextflow_tutorial/indata/*{1,2}.fq.gz"
-
 /* PREPROCESSING
  * Processes for fastqc, multiqc, and read processing, including
  * deduplication, trimming, human read removal
