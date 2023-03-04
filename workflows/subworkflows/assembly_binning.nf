@@ -31,18 +31,17 @@ workflow assembly_binning {
     ch_quast = quast(ch_megahit.contigs)
     ch_prodigal = prodigal(ch_megahit.contigs)
 
-    ch_binning_prep = binning_prep(input, ch_megahit.contigs)
+    ch_binning_prep = binning_prep(ch_megahit.reads, ch_megahit.contigs)
 
-    ch_metabat_bins = metabat(ch_megahit.contigs, ch_binning_prep.depth)
-    ch_maxbin_bins = maxbin(ch_megahit.contigs, ch_binning_prep.depth)
-    ch_concoct_bins = concoct(ch_megahit.contigs, ch_binning_prep.bam)
+    ch_metabat_bins = metabat(ch_binning_prep.contigs, ch_binning_prep.depth)
+    ch_maxbin_bins = maxbin(ch_binning_prep.contigs, ch_binning_prep.depth)
+    ch_concoct_bins = concoct(ch_binning_prep.contigs, ch_binning_prep.bam)
 
-    // combine the metabat, maxbin, contigs channels
-    ch_dastool = dastool(ch_megahit.contigs,
-        ch_metabat_bins.bins, 
-        ch_maxbin_bins.bins,
-        ch_concoct_bins.bins)
+    emit:
+    contigs = ch_megahit.contigs
+    metabat = ch_metabat_bins.bins
+    maxbin = ch_maxbin_bins.bins
+    concoct = ch_concoct_bins.bins
 
-    // checkm
-    ch_checkm = checkm(ch_dastool.bins, params.checkm_db_path)
+
 }

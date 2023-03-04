@@ -9,6 +9,7 @@ process binning_prep {
 	output:
 	tuple val(sample_id), path("${sample_id}.depth.txt"), emit: depth
 	tuple val(sample_id), path("align_${sample_id}.bam"), emit: bam
+	tuple val(sample_id), path(contigs), emit: contigs
 
 	script:
 	"""

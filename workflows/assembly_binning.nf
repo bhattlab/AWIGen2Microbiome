@@ -19,6 +19,15 @@ workflow {
 	ch_processed_reads = input_check()
 	// ASSEMBLY
 	ch_bin = assembly_binning(ch_processed_reads.reads)
+
+	// DAStool
+	ch_dastool = dastool(
+		ch_bin.contigs,
+		ch_bin.metabat, 
+		ch_bin.maxbin, 
+		ch_bins.concoct)
+
+	ch_checkm = checkm(ch_dastool.bins, params.checkm_db_path)
 	// ch_quast_res = combine_quast(ch_quast.quast_res.collect())
 }
 

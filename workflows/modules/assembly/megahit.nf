@@ -7,6 +7,7 @@ process megahit {
 
 	output:
 	tuple val(sample_id), path("${sample_id}.contigs.fa"), emit: contigs
+	tuple val(sample_id), path(reads), emit: reads
 
 	shell:
 	"""
