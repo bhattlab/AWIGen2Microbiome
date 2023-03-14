@@ -2,6 +2,8 @@
 
 nextflow.enable.dsl=2
 
+include { combine_fastqs } from './modules/input/combine_fastqs'
+
 /* PREPROCESSING
  * Processes for fastqc, multiqc, and read processing, including
  * deduplication, trimming, human read removal
@@ -17,15 +19,10 @@ include { hostremoval } from './modules/preprocessing/hostremoval'
 include { aggregatereports } from './modules/preprocessing/aggregate'
 
 workflow {
-	/* FIXME
-	The input should be a bit more customizable... will have to think about this in the future
-	for example: what about other file endings? samples sequenced on several lanes?
-	for the future, though
-	*/
-	Channel
-		.fromFilePairs(params.reads, checkIfExists: true)
-		.set { ch_read_pairs }
-
+	ch_sample_ids = Channel.fromList(file(params.samples).readLines())
+	ch_read_pairs = combine_fastqs(ch_smaple_ids, params.read_location)
+		.map { tuple(it[0], [it[1], it[2]]) }
+	
 	// PREPROCESSING
 	ch_fastqc = fastqc(ch_read_pairs)
 	multiqc(ch_fastqc.collect())
