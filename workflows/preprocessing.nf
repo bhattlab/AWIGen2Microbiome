@@ -20,7 +20,7 @@ include { aggregatereports } from './modules/preprocessing/aggregate'
 
 workflow {
 	ch_sample_ids = Channel.fromList(file(params.samples).readLines())
-	ch_read_pairs = combine_fastqs(ch_smaple_ids, params.read_location)
+	ch_read_pairs = combine_fastqs(ch_sample_ids, params.read_location)
 		.map { tuple(it[0], [it[1], it[2]]) }
 	
 	// PREPROCESSING
