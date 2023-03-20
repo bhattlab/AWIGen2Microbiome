@@ -6,7 +6,7 @@ process multiqc {
     path '*'
 
     output:
-    path 'multiqc_pre_report.html'
+    path 'multiqc_pre_report*'
 
     script:
     """
@@ -21,7 +21,7 @@ process postmultiqc {
     path '*'
 
     output:
-    path 'multiqc_postreport.html'
+    path 'multiqc_postreport*'
 
     script:
     """
