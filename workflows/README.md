@@ -8,7 +8,7 @@ repository.
 
 ## Important preparations
 
-#### Adjusting the `params.yml` file
+### Adjusting the `params.yml` file
 
 The `params.yml` file holds all the important settings for running the 
 workflows on your system. You will need to adjust the file paths to the 
@@ -17,7 +17,7 @@ You can also adjust the run parameters for some tools, such as the parameters
 to run mOTUs, for example. The `params.yml` file should hold some explanation
 for each of the parameters.
 
-#### Indexing the human reference genome
+### Indexing the human reference genome
 
 You will need a human reference genome on your file system so that you can 
 remove all reads matching to the human genome from your sample, since we are
@@ -43,7 +43,7 @@ cd /mnt
 bwa index hg38.fa
 ```
 
-#### Downloading the MetaPhlAn4 database
+### Downloading the MetaPhlAn4 database
 
 We also need to download the MetaPhlAn4 database, again using the already
 prepared singularity container:
@@ -55,7 +55,7 @@ cd /mnt
 metaphlan --install --bowtie2db ./
 ```
 
-#### Downloading the mOTUs3 database
+### Downloading the mOTUs3 database
 
 The mOTU tool needs a custom database of marker genes. Unfortunately, you 
 cannot download the database through the tool as of now, but maybe it will be
@@ -80,17 +80,18 @@ cd db_mOTU
 sed -i 's/2.6.0/3.0.3/g' db_mOTU_versions
 ```
 
-#### Phanta database
+### Database for phanta-lite
 
-For running [Phanta](https://github.com/bhattlab/phanta), please note that 
-Phanta was developed as a Snakemake workflow and the port to Nextflow is a
-bit hacky. As of yet, it is pretty unclear if we will want to include it in 
-the final analysis. If you want to run it, you will need a Kraken2 database. 
+For running a lite version of [Phanta](https://github.com/bhattlab/phanta), please 
+note that Phanta was originally developed as a Snakemake workflow and the port 
+to Nextflow is a bit hacky. As of yet, it is pretty unclear if we will want to 
+include it in the final analysis. If you want to run it, you will need a 
+Kraken2 database. 
 [Here](https://github.com/bhattlab/phanta/blob/main/databases.md) is a list of
 databases that are made available with the tool. You can download and extract
 the tarball following the documentation for the tool.
 
-#### CheckM database
+### CheckM database
 
 You will also need to download the database for checkM. This is available through 
 Zenodo as well and can be downloaded and extracted like that:
@@ -109,21 +110,16 @@ rm checkm_data_2015_01_16.tar.gz
 ## Running the workflows
 
 To run the workflow, you need Java and Nextflow running in your system. On an 
-HPC system, those are usually available through the `module load` system:
+HPC system, those are usually available through the `module load` system. 
 
 ```bash
 module load java/18.0.2.1
 module load nextflow/22.10.5
 ```
 
-On SCG, we have a dedicated script to submit a single job to the cluster:
-
+On the Stanford cluster, you can then run the preprocessing workflow like that:
 ```bash
-ssub -m 6 -t 8 -n nextflow_preprocessing "nextflow run preprocessing.nf -c config/run_preprocessing.config -params-file config/params.yml -with-trace -with-report"
+ssub -m 6 -t 72 -n nextflow_preprocessing "nextflow run </path/to/awigen/repo>/preprocessing.nf -c </path/to/awigen/repo>config/run_preprocessing.config -params-file </path/to/awigen/repo>config/params.yml -with-trace -with-report"
 ```
 
-The other workflows can then be run after the preprocessing step is done:
-```bash
-ssub -m 6 -t 8 -n nextflow_classification "nextflow run classification.nf -c config/run_classification.config -params-file config/params.yml -with-trace -with-report --input <path-to-stats-read-csv>"
-ssub -m 6 -t 8 -n nextflow_assembly "nextflow run assembly_binning.nf -c config/run_assembly.config -params-file config/params.yml -with-trace -with-report --input <path-to-stats-read-csv>"
-```
+Alternatively, the `sbatch` scripts we used are stored in the `jobs` folder.
