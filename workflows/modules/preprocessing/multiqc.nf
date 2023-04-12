@@ -1,5 +1,5 @@
 process multiqc {
-    publishDir params.outdir + "/stats", mode: params.publish_mode
+    publishDir params.outdir + "/stats/multiqc_pre", mode: params.publish_mode
     tag "MULTIQC before anything"
 
     input:
@@ -15,7 +15,7 @@ process multiqc {
 }
 
 process postmultiqc {
-    publishDir params.outdir + "/stats", mode: params.publish_mode
+    publishDir params.outdir + "/stats/multiqc_post", mode: params.publish_mode
 
     input:
     path '*'
