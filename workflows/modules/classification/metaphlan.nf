@@ -18,6 +18,7 @@ process metaphlan {
 		--input_type fastq --nproc $task.cpus \
 		--bowtie2out ${sample_id}.bowtie2.bz2 \
 		--bowtie2db ${metaphlan_db_path} --tmp_dir tmp/ \
+		--unclassified_estimation \
 		-o metaphlan_${sample_id}.out
 	"""
 }
