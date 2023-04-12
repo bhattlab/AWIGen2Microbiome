@@ -56,3 +56,6 @@ flowchart.png
 # Slurm
 *.err
 *.out
+
+# general
+data/
