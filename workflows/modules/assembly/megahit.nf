@@ -12,5 +12,6 @@ process megahit {
 	"""
 	megahit -1 ${reads[0]} -2 ${reads[1]} -o megahit_${sample_id} --out-prefix ${sample_id}
 	mv megahit_${sample_id}/${sample_id}.contigs.fa ./
+	rm -r megahit_${sample_id}
 	"""
 }
