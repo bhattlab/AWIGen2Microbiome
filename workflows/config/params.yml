@@ -20,7 +20,7 @@ outdir: "/labs/asbhatt/data/bhatt_lab_sequencing/23-03-08_awigen2/"
 
 # location of the host genome
 # Important! It needs to be indexed already
-host_genome_location: "/labs/asbhatt/wirbel/utils/host_genome/hg38/"
+host_genome_location: "/labs/asbhatt/data/databases/host_genome/hg38/"
 bwa_index_base: "hg38.fa"
 
 # trim galore
@@ -34,15 +34,15 @@ trimgalore_end_trim: 0
 
 run_motus: true
 run_metaphlan: true
-run_phanta: true
+run_phanta: false
 
 # parameters for mOTUs2
 motus_map_mgs_cutoff: 2
 motus_min_len_align_length: 75
-motus_db_path: "/labs/asbhatt/wirbel/utils/db_mOTU/"
+motus_db_path: "/labs/asbhatt/data/databases/motus_db/db_mOTU_3.0.3/"
 
 # parameters for metaphlan
-metaphlan_db_path: "/labs/asbhatt/wirbel/utils/metaphlan_db/"
+metaphlan_db_path: "/labs/asbhatt/data/databases/metaphlan_db/vJan21/"
 
 # parameters for phanta
 phanta_db_path: "/labs/asbhatt/data/program_indices/kraken2/humgut_mgv_human_refseq"
@@ -50,9 +50,6 @@ phanta_readlen: 150
 phanta_threshold: 10
 
 #########################################################################
-# Assembly parameters?
+# Binning parameters
 
-#########################################################################
-# Binning parameters?
-
-checkm_db_path: "/labs/asbhatt/wirbel/utils/db_checkm"
+checkm_db_path: "/labs/asbhatt/data/databases/checkm_db/2015_01_16/"
