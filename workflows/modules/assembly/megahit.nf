@@ -6,7 +6,7 @@ process megahit {
 	tuple val(sample_id), path(reads)
 
 	output:
-	tuple val(sample_id), path("megahit_${sample_id}/${sample_id}.contigs.fa"), emit: contigs
+	tuple val(sample_id), path("${sample_id}.contigs.fa"), emit: contigs
 
 	shell:
 	"""
