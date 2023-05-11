@@ -39,7 +39,7 @@ run_phanta: false
 # parameters for mOTUs2
 motus_map_mgs_cutoff: 2
 motus_min_len_align_length: 75
-motus_db_path: " /dataB/bacteria/db_mOTU_v3.0.1/"
+motus_db_path: "/dataB/bacteria/db_mOTU_v3.0.1/"
 
 # parameters for metaphlan
 metaphlan_db_path: "/dataB/bacteria/metaphlan_db_202212/"
