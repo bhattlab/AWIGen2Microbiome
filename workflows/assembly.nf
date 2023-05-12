@@ -27,5 +27,5 @@ workflow {
 }
 
 workflow.onComplete {
-	log.info ( workflow.success ? "\nAssembly and binning is done! Yay!\n" : "Oops .. something went wrong" )
+	log.info ( workflow.success ? "\nAssembly is done! Yay!\n" : "Oops .. something went wrong" )
 }
