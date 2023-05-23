@@ -1,0 +1,26 @@
+# site dictionary
+sites:
+  AG: "Agincourt" 
+  BF: "Nanoro"
+  KY: "Nairobi"
+  SW: "Soweto"
+  DM: "Dimamo"
+  GH: "Navrongo"
+
+# site colour dictionary
+sites_colours:
+  
+  Nanoro: "#BE9856" 
+  Navrongo: "#99ADD0" 
+  
+  Dimamo: "#DBBF5A"
+  Agincourt: "#889A4D"
+  
+  Nairobi: "#4A4C59"
+  Soweto: "#82354E"
+  
+stage_colours:
+  awigen1: "#6A3D9A"
+  awigen2: "#8C1515"
+  internal_controls: "#1F78B4"
+  
