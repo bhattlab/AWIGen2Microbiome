@@ -12,6 +12,7 @@ process hostremoval {
     tuple val(sample_id), path("${sample_id}_cleaned_{1,2,orphans}.fastq.gz"), emit: reads
     path("${stats}"), emit: stats
     path("${sample_id}.location"), emit: read_loc
+    path "versions.yml", emit: versions
 
     script:
     """
@@ -29,6 +30,12 @@ process hostremoval {
     echo ${sample_id}"\trmhost\t"\$totalcount >> "${stats}"
     echo ${sample_id}"\torphans\t"\${readcount_unpaired} >> "${stats}"
     echo "${sample_id},${params.outdir}/preprocessed_reads/${sample_id}_cleaned_1.fastq.gz,${params.outdir}/preprocessed_reads/${sample_id}_cleaned_2.fastq.gz,${params.outdir}/preprocessed_reads/${sample_id}_cleaned_orphans.fastq.gz" > ${sample_id}.location
+
+    bwa 2> bwa.version || true
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        bwa: \$( cat bwa.version | grep Version | sed -e "s/Version: //g" )
+    END_VERSIONS
     """
 
 }

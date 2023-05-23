@@ -6,7 +6,7 @@ using Nextflow as workflow manager. The workflows are based on those in the
 repository.
 
 
-## Important preparations
+## Preparations
 
 ### Adjusting the `params.yml` file
 
@@ -17,14 +17,15 @@ You can also adjust the run parameters for some tools, such as the parameters
 to run mOTUs, for example. The `params.yml` file should hold some explanation
 for each of the parameters.
 
-### Indexing the human reference genome
+### Indexing the host reference genome
 
-You will need a human reference genome on your file system so that you can 
-remove all reads matching to the human genome from your sample, since we are
-interested in the bacteria, not the human genome. Since we map with the `bwa`
-algorithm, you will need to index the human genome before being able to use
-the workflow.
-We will download the genome from 
+You will need a host reference genome on your file system so that you can 
+remove all reads matching to the host genome from your sample, since we are
+interested in the bacteria, not the host genome. We map reads to the host 
+genome with the `bwa` algorithm, so you will need to index the host 
+genome before being able to use the workflow.
+
+You can download for example the human reference genome from the
 [UCSC Genome Browser website](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/):
 ```bash
 cd <your-reference-genome-location>
@@ -59,7 +60,7 @@ metaphlan --install --bowtie2db ./
 
 The mOTU tool needs a custom database of marker genes. Unfortunately, you 
 cannot download the database through the tool as of now, but maybe it will be
-available as a feautre in the future (see 
+available as a feature in the future (see 
 [this issue](https://github.com/motu-tool/mOTUs/issues/109)). Instead, we can
 download and configure the database manually:
 
@@ -117,9 +118,33 @@ module load java/18.0.2.1
 module load nextflow/22.10.5
 ```
 
-On the Stanford cluster, you can then run the preprocessing workflow like that:
+The input for the preprocessing pipeline is the parameter `sample_file` in
+the parameter file. The sample file must be organized in the following way:
 ```bash
-ssub -m 6 -t 72 -n nextflow_preprocessing "nextflow run </path/to/awigen/repo>/preprocessing.nf -c </path/to/awigen/repo>config/run_preprocessing.config -params-file </path/to/awigen/repo>config/params.yml -with-trace -with-report"
+sampleID,forward,reverse
+SRR9943776,</path/to/raw_data>/SRR9943776_1.fastq.gz,</path/to/raw_data>/SRR9943776_2.fastq.gz
+...
 ```
+
+You can then run each pipeline like this, for example the preprocessing pipeline:
+```bash
+nextflow run </path/to/awigen/repo>/preprocessing.nf \
+	-c </path/to/awigen/repo>/config/run_preprocessing.config \
+	-params-file </path/to/your/modified/params/file> \
+	-with-trace -with-report
+```
+
+The other pipelines take the output from the preprocessing pipeline as input,
+for example classification:
+```bash
+nextflow run </path/to/awigen/repo>/classification.nf \
+        -c </path/to/awigen/repo>/config/run_classification.config \
+        -params-file </path/to/your/modified/params/file> \
+	--input </preprocessing/output/directory>/stats/preprocessed_read.csv \
+        -with-trace -with-report
+```
+
+> Please note that nextflow takes around 10Gb of memory, so you might have
+to run this as a job.
 
 Alternatively, the `sbatch` scripts we used are stored in the `jobs` folder.
