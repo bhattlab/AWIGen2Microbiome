@@ -16,7 +16,7 @@ process deduplicate {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        deduplicate: \$( hts_SuperDeduper --version )
+        hts_SuperDeduper: \$( hts_SuperDeduper --version )
     END_VERSIONS
     """
 }
