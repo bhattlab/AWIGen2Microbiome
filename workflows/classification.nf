@@ -20,19 +20,32 @@ workflow {
 
 	// Input
 	ch_processed_reads = input_check()
+	ch_versions = Channel.empty()
+
 	// CLASSIFICATION
 	if (params.run_motus) {
 		ch_motus = motus(ch_processed_reads.reads, params.motus_db_path)
 		ch_all_motus = collate_motus(ch_motus.motus_res.collect(), params.motus_db_path)
+		ch_versions = ch_versions.mix(ch_motus.versions.first())
+		ch_versions = ch_versions.mix(ch_all_motus.versions.first())
 	}
 	if (params.run_metaphlan) {
 		ch_metaphlan = metaphlan(ch_processed_reads.reads, params.metaphlan_db_path)
 		ch_all_metaphlan = collate_metaphlan(ch_metaphlan.metaphlan_res.collect())
+		ch_versions = ch_versions.mix(ch_metaphlan.versions.first())
+		ch_versions = ch_versions.mix(ch_all_metaphlan.versions.first())
 	}
 	if (params.run_phanta) {
 		ch_phanta = phanta(ch_processed_reads.reads, params.phanta_db_path)
 		ch_all_phanta = collate_phanta(ch_phanta.phanta_res.collect())
+		ch_versions = ch_versions.mix(ch_phanta.versions.first())
+		ch_versions = ch_versions.mix(ch_all_phanta.versions.first())
 	}
+
+	// VERSION output
+	ch_versions
+		.unique()
+		.collectFile(name: params.outdir + 'versions_classification.yml', sort: true)
 }
 
 workflow.onComplete {

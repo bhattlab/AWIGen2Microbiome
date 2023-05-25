@@ -1,5 +1,5 @@
 process phanta {
-  publishDir params.outdir + "/classification/phanta", mode: params.publish_mode
+  publishDir params.outdir + "/classification/phanta", mode: params.publish_mode, pattern: "phanta*.out.bracken"
   tag "PHANTA for $sample_id"
 	
 	input:
@@ -8,6 +8,7 @@ process phanta {
 
 	output:
 	path "phanta_${sample_id}.out.*", emit: phanta_res
+	path "versions_phanta_a.yml", emit: versions
 
 	script:
 	"""
@@ -28,19 +29,28 @@ process phanta {
     	-w phanta_${sample_id}.out.bracken \
     	-r ${params.phanta_readlen} \
     	-l 'S' -t ${params.phanta_threshold}
-  fi
+  	fi
+
+	cat <<-END_VERSIONS > versions_phanta_a.yml
+	"${task.process}":
+	    kraken2: \$( kraken2 --version | head -n 1 | sed -e "s/Kraken version //g" )
+	    bracken: unclear
+	    python: \$( python --version | sed -e "s/Python //g" )
+	    phanta-lite: v0.0.1 [commit: 13be0bd]
+	END_VERSIONS
 	"""
 
 }
 
 process collate_phanta { 
-	publishDir params.outdir + "/classification", mode: params.publish_mode
+	publishDir params.outdir + "/classification", mode: params.publish_mode, pattern: "phanta_all*"
 
 	input:
 	path(phanta_res)
 
 	output:
-	path "phanta_all.tsv"
+	path "phanta_all.tsv", emit: phanta_all
+	path "versions_phanta_final.yml", emit: versions
 
 	script:
 	"""
@@ -51,6 +61,11 @@ process collate_phanta {
 	mv *.out.filtered ./kraken
 
 	combine_phanta.py ./bracken ./kraken
+
+	cat <<-END_VERSIONS > versions_phanta_final.yml
+	"${task.process}":
+	    phanta_all.tsv: \$( md5sum phanta_all.tsv | sed -e "s/\\s.*//g" )
+	END_VERSIONS
 	"""
 }
 
