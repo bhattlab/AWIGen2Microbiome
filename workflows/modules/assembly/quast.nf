@@ -6,11 +6,17 @@ process quast {
 
   output:
   path("${sample_id}_report.tsv"), emit: quast_res
+  path "versions.yml", emit: versions
 
   shell:
   """
   quast.py -o quast ${contigs} --fast
   mv ./quast/report.tsv ./${sample_id}_report.tsv
+
+  cat <<-END_VERSIONS > versions.yml
+  "${task.process}":
+      QUAST: \$( quast --version | grep "QUAST" | sed -e "s/QUAST v//g" )
+  END_VERSIONS
   """
 }
 

@@ -19,11 +19,27 @@ workflow {
 
 	// Input
 	ch_processed_reads = input_check()
+	ch_versions = Channel.empty()
+
 	// ASSEMBLY
 	ch_megahit = megahit(ch_processed_reads)
+	ch_versions = ch_versions.mix(ch_megahit.versions.first())
+
+	// QUAST
 	ch_quast = quast(ch_megahit.contigs)
-	ch_prodigal = prodigal(ch_megahit.contigs)
 	ch_quast_all = combine_quast(ch_quast.quast_res.collect())
+	ch_versions = ch_versions.mix(ch_quast.versions.first())
+	
+	// PRODIGAL
+	ch_prodigal = prodigal(ch_megahit.contigs)
+	ch_versions = ch_versions.mix(ch_prodigal.versions.first())
+
+	// VERSION output
+	ch_versions
+		.unique()
+		.collectFile(name: params.outdir + 'versions_assembly.yml')
+	// Assembly location output
+	ch_megahit.location.collectFile(name: params.outdir + '/stats/assemblies.csv', keepHeader: true)
 }
 
 workflow.onComplete {
