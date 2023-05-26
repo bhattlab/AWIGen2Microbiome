@@ -1,47 +1,70 @@
+#!/usr/bin/env nextflow
 
-/* ASSEMBLY
- * Runs megahit on paired and orphan reads, then uses QUAST to measure
- * assembly quality. Combines quast reports into a single report.
-*/
+nextflow.enable.dsl=2
 
-include { megahit } from '../modules/assembly/megahit'
-include { prodigal } from '../modules/assembly/prodigal'
-include { quast } from '../modules/assembly/quast'
-include { combine_quast } from '../modules/assembly/quast'
+
+include { input_check } from './modules/input/input_check'
+include { input_check_assembly } from './modules/input/input_assembly'
 
 /* BINNING
- * Runs metabat2 and maxbin on the contigs, then DAS tool (for later)
+ * Runs metabat2, maxbin, and Concoct on the contigs, then DAS tool
  * Check quality by CheckM or sth (maybe others)?
 */
 
-include { binning_prep } from '../modules/binning/binning_prep'
-include { metabat } from '../modules/binning/metabat'
-include { maxbin } from '../modules/binning/maxbin'
-include { concoct } from '../modules/binning/concoct'
-include { dastool } from '../modules/binning/dastool'
-include { checkm } from '../modules/binning/checkm'
+include { binning_prep } from './modules/binning/binning_prep'
+include { metabat } from './modules/binning/metabat'
+include { maxbin } from './modules/binning/maxbin'
+include { concoct } from './modules/binning/concoct'
+include { dastool } from './modules/binning/dastool'
+include { checkm } from './modules/binning/checkm'
 
-workflow assembly_binning {
-    take:
-        input //channel: tuple: val(sample_id), path(reads)
+workflow {
 
-    main:
+    ch_input_reads = input_check()
+    ch_input_assembly = input_check_assembly()
+    ch_input = ch_input_reads
+        .concat(ch_input_assembly)
+        .groupTuple()
+        .map{ sampleid, info -> tuple(sampleid, info[0], info[1]) }
+    ch_versions = Channel.empty()
 
-    ch_megahit = megahit(input)
-    ch_quast = quast(ch_megahit.contigs)
-    ch_prodigal = prodigal(ch_megahit.contigs)
+    // PREPARE BINNING
+    ch_binning_prep = binning_prep(ch_input)
+    ch_versions = ch_versions.mix(ch_binning_prep.versions.first())
+    
+    // METABAT
+    ch_metabat = metabat(ch_binning_prep.bin_prep)
+    ch_versions = ch_versions.mix(ch_metabat.versions.first())
 
-    ch_binning_prep = binning_prep(ch_megahit.reads, ch_megahit.contigs)
+    // MAXBIN
+    ch_maxbin = maxbin(ch_binning_prep.bin_prep)
+    ch_versions = ch_versions.mix(ch_maxbin.versions.first())
 
-    ch_metabat_bins = metabat(ch_binning_prep.contigs, ch_binning_prep.depth)
-    ch_maxbin_bins = maxbin(ch_binning_prep.contigs, ch_binning_prep.depth)
-    ch_concoct_bins = concoct(ch_binning_prep.contigs, ch_binning_prep.bam)
+    // CONCOCT
+    ch_concoct = concoct(ch_binning_prep.bin_prep)
+    ch_versions = ch_versions.mix(ch_concoct.versions.first())
 
-    emit:
-    contigs = ch_megahit.contigs
-    metabat = ch_metabat_bins.bins
-    maxbin = ch_maxbin_bins.bins
-    concoct = ch_concoct_bins.bins
+    // combine bins for each method for dastool
+    ch_final =  ch_binning_prep.bin_prep
+        .concat(ch_metabat.bins)
+        .concat(ch_maxbin.bins)
+        .concat(ch_concoct.bins)
+        .groupTuple(size: 4)
 
+    // run DAStool
+    ch_dastool = dastool(ch_final)
+    ch_versions = ch_versions.mix(ch_dastool.versions.first())
 
+    // run checkM on DAStool bins
+    ch_checkm = checkm(ch_dastool.bins, params.checkm_db_path)
+    ch_versions = ch_versions.mix(ch_checkm.versions.first())
+
+    // VERSION output
+    ch_versions
+        .unique()
+        .collectFile(name: params.outdir + 'versions_binning.yml')
+}
+
+workflow.onComplete {
+    log.info ( workflow.success ? "\nBinning is done! Yay!\n" : "Oops .. something went wrong" )
 }

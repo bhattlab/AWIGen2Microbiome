@@ -1,13 +1,13 @@
 process concoct {
-	publishDir params.outdir + "/binning/concoct/", mode: params.publish_mode
+	publishDir params.outdir + "/binning/concoct/", mode: params.publish_mode, pattern: "concoct_*"
 	tag "CONCOCT on $sample_id"
 
 	input:
-	tuple val(sample_id), path(contigs)
-	tuple val(sample_id), path(bam)
+	tuple val(sample_id), path(contigs), path(depth), path(bam)
 
 	output:
 	tuple val(sample_id), path("concoct_${sample_id}/"), emit: bins
+	path "versions.yml", emit: versions
 
 	script:
 	"""
@@ -24,5 +24,10 @@ process concoct {
 		concoct_${sample_id}/clustering_merged.csv
 	extract_fasta_bins.py ${contigs} concoct_${sample_id}/clustering_merged.csv \
 		--output_path concoct_${sample_id}
+
+	cat <<-END_VERSIONS > versions.yml
+	"${task.process}":
+	    concoct: \$( concoct -v | sed -e "s/concoct //g" )
+	END_VERSIONS
 	"""
 }

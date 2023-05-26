@@ -5,7 +5,7 @@ def hasExtension(it, extension) {
     it.toString().toLowerCase().endsWith(extension.toLowerCase())
 }
 
-workflow input_assembly {
+workflow input_check_assembly {
     main:
     if(hasExtension(params.input_assembly, "csv")){
         // extracts read files from samplesheet CSV and distribute into channels
