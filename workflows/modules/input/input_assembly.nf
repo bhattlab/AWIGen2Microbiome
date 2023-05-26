@@ -5,6 +5,8 @@ def hasExtension(it, extension) {
     it.toString().toLowerCase().endsWith(extension.toLowerCase())
 }
 
+params.input_assembly = params.outdir + '/stats/assemblies.csv'
+
 workflow input_check_assembly {
     main:
     if(hasExtension(params.input_assembly, "csv")){

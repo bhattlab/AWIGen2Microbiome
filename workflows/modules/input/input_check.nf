@@ -5,6 +5,8 @@ def hasExtension(it, extension) {
     it.toString().toLowerCase().endsWith(extension.toLowerCase())
 }
 
+params.input = params.outdir + '/stats/preprocessed_reads.csv'
+
 workflow input_check {
     main:
     if(hasExtension(params.input, "csv")){
