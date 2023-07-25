@@ -142,9 +142,50 @@ ggsave(alpha.phanta$plot, filename = here('figures', 'classification_analyses',
                                           'alpha_phanta.pdf'),
        width = 5, height = 8, useDingbats=FALSE)
 alpha.phanta.vir <- .f_alpha(lst.phanta.vir$species, rarefy=FALSE)
-ggsave(alpha.phanta$plot, filename = here('figures', 'classification_analyses',
+ggsave(alpha.phanta.vir$plot, filename = here('figures', 'classification_analyses',
                                           'alpha_phanta_vir.pdf'),
        width = 5, height = 8, useDingbats=FALSE)
+
+# ##############################################################################
+# compare alpha diversity across tools
+
+.f_pairwise_scatter <- function(df){
+  stopifnot(all(c('motus', 'mpa', 'phanta', 'phanta_vir') %in% colnames(df)))
+  bind_rows(df %>% transmute(x=motus, y=mpa) %>% mutate(xt='motus', yt='mpa'),
+    df %>% transmute(x=motus, y=phanta) %>% mutate(xt='motus', yt='phanta'),
+    df %>% transmute(x=motus, y=phanta_vir) %>% 
+      mutate(xt='motus', yt='phanta_vir'),
+    df %>% transmute(x=mpa, y=phanta) %>% mutate(xt='mpa', yt='phanta'),
+    df %>% transmute(x=mpa, y=phanta_vir) %>% mutate(xt='mpa', yt='phanta_vir'),
+    df %>% transmute(x=phanta, y=phanta_vir) %>% 
+      mutate(xt='phanta', yt='phanta_vir')) %>% 
+    ggplot(aes(x=x, y=y)) + 
+      geom_abline(slope = 1, intercept = 0) + 
+      geom_point() + 
+      facet_grid(xt~yt) + 
+      theme_bw() + 
+      theme(panel.grid.minor = element_blank())
+    
+}
+
+df.alpha.comp <- alpha.motus$alpha_df %>% 
+  pivot_longer(-Sample_ID) %>% mutate(type='motus') %>% 
+  bind_rows(alpha.mpa4$alpha_df %>% pivot_longer(-Sample_ID) %>% 
+              mutate(type='mpa')) %>% 
+  bind_rows(alpha.phanta$alpha_df %>% pivot_longer(-Sample_ID) %>% 
+              mutate(type='phanta')) %>% 
+  bind_rows(alpha.phanta.vir$alpha_df %>% pivot_longer(-Sample_ID) %>% 
+              mutate(type='phanta_vir')) 
+
+pdf(here('figures', 'classification_analyses', 'alpha_comp.pdf'),
+    width = 8, height = 8, useDingbats = FALSE)
+for (i in c('inv_simpson', 'richness', 'shannon', 'simpson')){
+  print(.f_pairwise_scatter(df.alpha.comp %>% 
+    filter(name==i) %>% 
+    pivot_wider(names_from = 'type', values_from = 'value')) +
+      ggtitle(i))
+}
+dev.off()  
 
 # ##############################################################################
 # beta
