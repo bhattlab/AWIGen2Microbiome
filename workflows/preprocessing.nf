@@ -9,10 +9,10 @@ include { input_raw } from './modules/input/input_raw'
  * deduplication, trimming, human read removal
 */
 
-include { fastqc } from  './modules/preprocessing/fastqc'
-include { postfastqc } from './modules/preprocessing/fastqc'
-include { multiqc } from './modules/preprocessing/multiqc'
-include { postmultiqc } from './modules/preprocessing/multiqc'
+include { fastqc as fastqc_pre } from  './modules/preprocessing/fastqc'
+include { fastqc as fastqc_post } from './modules/preprocessing/fastqc'
+include { multiqc as multiqc_pre } from './modules/preprocessing/multiqc'
+include { multiqc as multiqc_post } from './modules/preprocessing/multiqc'
 include { deduplicate } from './modules/preprocessing/deduplicate'
 include { trimgalore } from './modules/preprocessing/trimgalore'
 include { hostremoval } from './modules/preprocessing/hostremoval'
@@ -24,11 +24,11 @@ workflow {
 	
 	// PREPROCESSING
 	// FASTQC
-	ch_fastqc = fastqc(ch_read_pairs)
+	ch_fastqc = fastqc_pre(ch_read_pairs, "pre")
 	ch_versions = ch_versions.mix(ch_fastqc.versions.first())
 
 	// MULTIQC
-	ch_multiqc_pre = multiqc(ch_fastqc.prefastqc.collect())
+	ch_multiqc_pre = multiqc_pre(ch_fastqc.fastqc.collect(), "pre")
 	ch_versions = ch_versions.mix(ch_multiqc_pre.versions.first())
 
 	// DEDUPLICATION
@@ -47,14 +47,16 @@ workflow {
 	ch_versions = ch_versions.mix(ch_host_remove.versions.first())
 
 	// FASTQC again
-	ch_postfastqc = postfastqc(ch_host_remove.reads)
+	ch_postfastqc = fastqc_post(ch_host_remove.reads, "post")
 
 	// MULTIQC again
-	postmultiqc(ch_postfastqc.postfastqc.collect())
+	multiqc_post(ch_postfastqc.fastqc.collect(), "post")
 
 	// AGGREGATE REPORTS
 	aggregatereports(ch_host_remove.stats.collect(), 
-					ch_host_remove.read_loc.collect())
+					ch_host_remove.read_loc.collect(),
+					params.outdir + "/stats/preprocessed_reads.csv",
+					params.outdir + "/stats/read_counts.tsv")
 
 	// VERSION output
 	ch_versions
