@@ -44,6 +44,7 @@ run_phanta: false
 motus_map_mgs_cutoff: 2
 motus_min_len_align_length: 75
 motus_db_path: "/labs/asbhatt/data/databases/motus_db/3.0.3/db_mOTU/"
+motus_gtdb_path: "/labs/asbhatt/data/databases/motus_db/3.0.3/mOTUs_3.0.0_GTDB_tax.tsv"
 
 # parameters for metaphlan
 metaphlan_db_path: "/labs/asbhatt/data/databases/metaphlan_db/vJan21/"
