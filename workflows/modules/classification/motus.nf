@@ -15,11 +15,18 @@ process motus {
 
 	script:
 	"""
-	motus profile -n ${sample_id} -t $task.cpus -c \
-		-db ${motus_db_path} \
-		-l ${params.motus_min_len_align_length} -g ${params.motus_map_mgs_cutoff} \
-		-f ${reads[0]} -r ${reads[1]} -s ${reads[2]} -o motus_${sample_id}.out
-
+	if [ -e ${reads[2]} ]
+	then
+		motus profile -n ${sample_id} -t $task.cpus -c \
+			-db ${motus_db_path} \
+			-l ${params.motus_min_len_align_length} -g ${params.motus_map_mgs_cutoff} \
+			-f ${reads[0]} -r ${reads[1]} -s ${reads[2]} -o motus_${sample_id}.out
+	else
+		motus profile -n ${sample_id} -t $task.cpus -c \
+			-db ${motus_db_path} \
+			-l ${params.motus_min_len_align_length} -g ${params.motus_map_mgs_cutoff} \
+			-f ${reads[0]} -r ${reads[1]} -o motus_${sample_id}.out
+	fi
 
 	bwa 2> bwa.version || true
 	cat <<-END_VERSIONS > versions_motus_a.yml
@@ -38,9 +45,11 @@ process collate_motus {
 	input:
 	path(motus_res)
 	path(motus_db_path)
+	path(motus_gtdb_path)
 
 	output:
 	path "motus_all.tsv", emit: motus_all
+	path "motus_all_gtdb.tsv", emit: motus_all_gtdb
 	path "versions_motus_final.yml", emit: versions
 
 	script:
@@ -50,9 +59,13 @@ process collate_motus {
 	mv $motus_res ./tmp
 	motus merge -o motus_all.tsv -d ./tmp -db ${motus_db_path}
 
+	motus_gtdb.py $motus_gtdb_path motus_all.tsv motus_all_gtdb.tsv
+
+
 	cat <<-END_VERSIONS > versions_motus_final.yml
 	"${task.process}":
 	    motus_all.tsv: \$( md5sum motus_all.tsv | sed -e "s/\\s.*//g" )
+	    motus_all_gtdb.tsv: \$( md5sum motus_all_gtdb.tsv | sed -e "s/\\s.*//g" )
 	END_VERSIONS
 	"""
 }

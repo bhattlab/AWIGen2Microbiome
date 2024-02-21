@@ -6,6 +6,7 @@ import pandas as pd
 from functools import reduce
 
 out_dir = sys.argv[1]
+out_file = sys.argv[2]
 
 files_mpa = os.listdir(out_dir)
 def read_mpa(x):
@@ -18,5 +19,5 @@ def read_mpa(x):
 dfs = [read_mpa(f) for f in files_mpa]
 df_merged = reduce(lambda  left,right: pd.merge(left,right, on=['taxonomy'],
                                             how='outer'), dfs).fillna(0)
-df_merged.to_csv('metaphlan_all.tsv', sep="\t", index=False)
+df_merged.to_csv(out_file, sep="\t", index=False)
 

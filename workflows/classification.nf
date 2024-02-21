@@ -25,13 +25,16 @@ workflow {
 	// CLASSIFICATION
 	if (params.run_motus) {
 		ch_motus = motus(ch_processed_reads.reads, params.motus_db_path)
-		ch_all_motus = collate_motus(ch_motus.motus_res.collect(), params.motus_db_path)
+		ch_all_motus = collate_motus(ch_motus.motus_res.collect(), 
+			params.motus_db_path,
+			params.motus_gtdb_path)
 		ch_versions = ch_versions.mix(ch_motus.versions.first())
 		ch_versions = ch_versions.mix(ch_all_motus.versions.first())
 	}
 	if (params.run_metaphlan) {
 		ch_metaphlan = metaphlan(ch_processed_reads.reads, params.metaphlan_db_path)
-		ch_all_metaphlan = collate_metaphlan(ch_metaphlan.metaphlan_res.collect())
+		ch_all_metaphlan = collate_metaphlan(ch_metaphlan.metaphlan_res.collect(), 
+			ch_metaphlan.metaphlan_res_gtdb.collect())
 		ch_versions = ch_versions.mix(ch_metaphlan.versions.first())
 		ch_versions = ch_versions.mix(ch_all_metaphlan.versions.first())
 	}
