@@ -23,20 +23,18 @@ workflow input_check {
                         // Check if given combination is valid
                         if (!forward) exit 1, "Invalid input samplesheet: Forward can not be empty."
                         if (!reverse) exit 1, "Invalid input samplesheet: Reverse can not be empty."
-                        if (!orphans) exit 1, "Invalid input samplesheet: Orphans can not be empty."
-                        return [ sampleid, forward, reverse, orphans ]
+                        if (!orphans) 
+                            return [ sampleid, [ forward, reverse ] ] 
+                        else 
+                            return [ sampleid, [ forward, reverse, orphans ] ]
                     } else {
                         exit 1, "Input samplesheet contains row with ${row.size()} column(s). Expects 4."
                     }
              }
-        ch_reads = ch_input
-            .map { sampleid, forward, reverse, orphans ->
-                        return [ sampleid, [ forward, reverse, orphans ] ]
-                }
     } else {
         exit 1, "Input samplesheet should be a csv file organised like this:\n\nsampleID,forward,reverse,orphans"
     }
    
     emit:
-    reads = ch_reads
+    reads = ch_input
 }

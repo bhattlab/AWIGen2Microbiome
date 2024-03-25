@@ -21,11 +21,20 @@ process dastool {
 		-i metabat.tsv,maxbin.tsv,concoct.tsv \
 		-c ${bins[0]} -o dastool_${sample_id} || true
 
-
-	mv dastool_${sample_id}_DASTool_bins dastool_${sample_id}
-	mv dastool_${sample_id}_DASTool_contig2bin.tsv ./dastool_${sample_id}
-	mv dastool_${sample_id}_DASTool.log ./dastool_${sample_id}
-	mv dastool_${sample_id}_DASTool_summary.tsv ./dastool_${sample_id}
+        if \$(grep -q "No bins with bin-score >0.5 found" dastool_${sample_id}_DASTool.log ) || \$(grep -q "single copy gene prediction using diamond failed" dastool_${sample_id}_DASTool.log )
+        then
+            mkdir dastool_${sample_id}
+            cp ${bins[0]} ./dastool_${sample_id}/unbinned.fa
+        elif ls dastool_${sample_id}_DASTool_bins/*.fa 1> /dev/null 2>&1
+        then
+            mv dastool_${sample_id}_DASTool_bins dastool_${sample_id}
+            mv dastool_${sample_id}_DASTool_contig2bin.tsv ./dastool_${sample_id}
+            mv dastool_${sample_id}_DASTool.log ./dastool_${sample_id}
+            mv dastool_${sample_id}_DASTool_summary.tsv ./dastool_${sample_id}
+        else
+            echo "DAStool failed in an unexpected way!"
+            exit 1
+        fi
 	
 	cat <<-END_VERSIONS > versions.yml
 	"${task.process}":
