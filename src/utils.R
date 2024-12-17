@@ -75,18 +75,18 @@
   } else {
     stop("Parameter 'dist' should be either 'log-euclidean' or 'bray'!")
   }
-  # dist.mat <- as.matrix(d.mat)
-  # dist.mat[lower.tri(dist.mat)] <- NA
-  # diag(dist.mat) <- NA
-  # df.distances <- as_tibble(dist.mat, rownames='Sample') %>% 
-  #   pivot_longer(-Sample) %>% 
-  #   filter(!is.na(value)) %>% 
-  #   mutate(siteA=str_remove(Sample, '[0-9]*$')) %>% 
-  #   filter(!str_detect(siteA, '(Buffer|Zymo)')) %>%
-  #   mutate(siteB=str_remove(name, '[0-9]*$')) %>% 
-  #   filter(!str_detect(siteB, '(Buffer|Zymo)')) %>% 
-  #   mutate(site.cityA=site.dict[siteA]) %>% 
-  #   mutate(site.cityB=site.dict[siteB])
+  dist.mat <- as.matrix(d.mat)
+  dist.mat[lower.tri(dist.mat)] <- NA
+  diag(dist.mat) <- NA
+  df.distances <- as_tibble(dist.mat, rownames='Sample') %>%
+    pivot_longer(-Sample) %>%
+    filter(!is.na(value)) %>%
+    mutate(siteA=str_remove(Sample, '[0-9]*$')) %>%
+    filter(!str_detect(siteA, '(Buffer|Zymo)')) %>%
+    mutate(siteB=str_remove(name, '[0-9]*$')) %>%
+    filter(!str_detect(siteB, '(Buffer|Zymo)')) %>%
+    mutate(site.cityA=site.dict[siteA]) %>%
+    mutate(site.cityB=site.dict[siteB])
   
   pco <- labdsv::pco(d.mat)
   df <- pco$points
@@ -125,6 +125,6 @@
   g.all <- cowplot::plot_grid(g.boxes.top, NULL, g1, g.boxes.side, 
                               rel_heights = c(0.2, 0.8),
                               rel_widths = c(0.8, 0.2), align = 'hv')
-  return(list('plot'=g.all, 'coords'=df))#, 'distances'=df.distances))
+  return(list('plot'=g.all, 'coords'=df, 'distances'=df.distances))
 }
 
