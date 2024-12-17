@@ -16,8 +16,8 @@ sites_colours:
   Dimamo: "#DBBF5A"
   Agincourt: "#889A4D"
   
-  Nairobi: "#4A4C59"
   Soweto: "#82354E"
+  Nairobi: "#4A4C59"
   
 stage_colours:
   awigen1: "#6A3D9A"
