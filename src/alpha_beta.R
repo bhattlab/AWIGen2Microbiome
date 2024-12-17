@@ -19,12 +19,13 @@ site.colours <- unlist(plot.params$sites_colours)
 
 load(here('data', 'metadata', 'metadata_clean.RData'))
 load(here('data', 'classification', 'all_classification_tables.RData'))
+load('./data/classification/new_db_tables.RData')
 
 # ##############################################################################
 # main stuff
 set.seed(1951)
 
-tbl.bacteria <- lst.motus.gtdb$species
+tbl.bacteria <- motus.gtdb.lvls$species
 meta.red <- metadata.clean %>% 
   filter(meta_site_comparison) %>% 
   filter(general_sample_id %in% colnames(tbl.bacteria))
@@ -37,19 +38,24 @@ meta.red %>%
 
 # alpha
 alpha.motus <- .f_alpha(tbl.bacteria, l=7500, rarefy=TRUE)
+alpha.motus$plot.inv$data %>% 
+  select(Sample_ID, site.city, inv_simpson) %>% 
+  write_csv('./files/source_data/Fig1c.csv')
 ggsave(alpha.motus$plot, filename = here('figures', 'classification_analyses',
-                                         'alpha_motus.pdf'),
+                                         'alpha_motus_newdb.pdf'),
        width = 5, height = 8, useDingbats=FALSE)
 
 # beta
 x <- .f_beta(t(vegan::rrarefy(t(tbl.bacteria), 7500)), dist='bray')
+x$coords %>% 
+  write_csv('./files/source_data/Fig1b.csv')
 ggsave(x$plot, filename = here('figures', 'classification_analyses',
-                               'beta_motus.pdf'),
+                               'beta_motus_newdb.pdf'),
        width = 6, height = 6, useDingbats=FALSE)
 
 # correlation with phyla and alpha diversity
 df.alpha <- alpha.motus$alpha_df
-df <- as_tibble(prop.table(lst.motus.gtdb$phylum, 2), rownames='phylum') %>% 
+df <- as_tibble(prop.table(motus.gtdb.lvls$phylum, 2), rownames='phylum') %>% 
   pivot_longer(-phylum, names_to = 'Sample', values_to = 'value') %>% 
   full_join(x$coords, by='Sample') %>% 
   filter(!is.na(PCo1)) %>% 
@@ -83,7 +89,7 @@ g <- sp.cor %>% select(-calpha) %>%
     xlab('Correlation with PCo1') + 
     ylab('Correlation with PCo2')
 ggsave(g, filename=here('figures','classification_analyses',
-                        'phylum_pco_correlation.pdf'),
+                        'phylum_pco_correlation_newdb.pdf'),
        width = 5, height = 5, useDingbats=FALSE)
 
 g <- df %>% 
@@ -101,9 +107,60 @@ g <- df %>%
     theme_bw() + theme(panel.grid.minor = element_blank()) + 
     scale_color_manual(values=site.colours, name='Site') +
     facet_grid(pc~phylum) + ylab('log10 rel. ab') + xlab('PCo value')
+g$data %>% 
+  write_csv('./files/source_data/ED4a.csv')
 ggsave(g, filename=here('figures','classification_analyses',
-                        'phylum_pco_correlation_plots.pdf'),
+                        'phylum_pco_correlation_plots_newdb.pdf'),
        width = 12, height = 6, useDingbats=FALSE)
+
+prop.table(as.matrix(motus.gtdb.lvls$phylum),2)[
+  sp.cor %>% 
+    select(-calpha) %>% 
+    filter(!str_detect(phylum, 'Not_annotated|unassigned')) %>% 
+    mutate(name=case_when((abs(c1) > 0.5 | abs(c2) > 0.5)~phylum, 
+                          TRUE~'')) %>% 
+    filter(name!='') %>% pull(name),] %>% 
+  as_tibble(rownames='phylum') %>% 
+  pivot_longer(-phylum, names_to = 'general_sample_id') %>% 
+  right_join(meta.red, by='general_sample_id') %>% 
+  ggplot(aes(x=general_site, y=log10(value+1e-04), fill=general_site)) + 
+    geom_boxplot() + 
+    facet_grid(~phylum) + 
+    scale_fill_manual(values=site.colours, guide='none') + 
+    theme_bw() + theme(panel.grid = element_blank(), 
+                       axis.ticks.x = element_blank(),
+                       axis.text.x = element_blank()) 
+
+df.bar <- prop.table(as.matrix(motus.gtdb.lvls$phylum),2) %>% 
+  as_tibble(rownames='phylum') %>% 
+  pivot_longer(-phylum, names_to = 'general_sample_id') %>%  
+  right_join(meta.red, by='general_sample_id')
+df.bar.order <- df.bar %>% 
+  filter(phylum=='p__Firmicutes_A') %>% 
+  arrange(desc(value))
+df.bar.select <- df.bar %>% 
+  group_by(phylum) %>% 
+  summarise(med_ab=median(value)) %>% 
+  arrange(desc(med_ab)) %>% 
+  filter(phylum!='unassigned') %>% 
+  slice_head(n=10)
+g <-df.bar %>% 
+  mutate(general_sample_id=factor(general_sample_id, 
+                                  levels=df.bar.order$general_sample_id)) %>% 
+  mutate(phylum=case_when(phylum%in%df.bar.select$phylum~phylum,
+                          TRUE~'other')) %>% 
+  mutate(phylum=factor(phylum, levels=c(df.bar.select$phylum, 'other'))) %>% 
+  ggplot(aes(x=general_sample_id, y=value, fill=phylum)) + 
+    geom_bar(stat='identity') + 
+    facet_grid(~general_site, space='free', scales='free') + 
+    theme_bw() + theme(panel.grid = element_blank(), 
+                       axis.ticks.x = element_blank(),
+                       axis.text.x = element_blank(),
+                       strip.background = element_blank()) +
+    scale_fill_manual(values=RColorBrewer::brewer.pal(11, 'Paired'),
+                      name='Phylum') + 
+  xlab('') + ylab('Relative abundance')
+
 
 # phage richness
 cluster.loc <- paste0('/Volumes/lab_asbhatt/data/bhatt_lab_sequencing/',
@@ -137,6 +194,9 @@ g <- df.alpha.phage %>%
   xlab('') + theme_bw() + ylab("Phage richness") +
   theme(panel.grid.minor = element_blank(), 
         panel.grid.major.x = element_blank())
+g$data %>% 
+  select(general_sample_id, phage_richness, general_site) %>% 
+  write_csv('./files/source_data/Fig3c.csv')
 ggsave(g, filename=here('figures','classification_analyses',
                         'alpha_phage.pdf'),
        width = 4, height = 4, useDingbats=FALSE)
@@ -153,7 +213,7 @@ g.alpha.cor <- df.combine %>%
     theme_bw() +
     geom_smooth(method = 'lm', se=FALSE)
 ggsave(g.alpha.cor, filename=here('figures','classification_analyses',
-                                  'phage_bac_alpha_scatter.pdf'),
+                                  'phage_bac_alpha_scatter_newdb.pdf'),
        width = 5, height = 5, useDingbats=FALSE)
 
 df.combine %>% 
@@ -163,9 +223,19 @@ df.combine %>%
            .y)
   }) %>% bind_rows()
 
+#' # A tibble: 6 × 2
+#' c general_site
+#' <dbl> <fct>       
+#' 1 0.287 Nanoro      
+#' 2 0.320 Navrongo    
+#' 3 0.400 Dimamo      
+#' 4 0.272 Agincourt   
+#' 5 0.498 Soweto      
+#' 6 0.470 Nairobi   
+
 # stats
-kruskal.test(richness~general_site, data=df.combine)$p.value
-kruskal.test(phage_richness~general_site, data=df.combine)$p.value
+kruskal.test(richness~general_site, data=df.combine)$p.value # 1.177042e-159
+kruskal.test(phage_richness~general_site, data=df.combine)$p.value # 2.506611e-22
 
 # site-to-site comparison
 df.res <- tibble(site1=character(0), site2=character(0), 
@@ -206,7 +276,7 @@ g <- df.res %>%
     ylab('')
 
 ggsave(g, filename=here('figures','classification_analyses',
-                        'phage_bac_alpha_comp.pdf'),
+                        'phage_bac_alpha_comp_newdb.pdf'),
        width = 5, height = 4, useDingbats=FALSE)
 
 # ##############################################################################
@@ -251,6 +321,14 @@ df.tmp %>%
     }) %>% 
   bind_rows()
 
+#'  A tibble: 4 × 4
+#' p.val       c name_read type          
+#' <dbl>   <dbl> <chr>     <chr>         
+#' 1 1.05e- 26  0.249  all_reads phage_richness
+#' 2 6.51e-  2 -0.0435 all_reads richness      
+#' 3 2.23e-136  0.540  assembly  phage_richness
+#' 4 0          0.768  assembly  richness 
+
 # also check phanta
 tbl.phanta <- lst.phanta.vir$species
 g.phanta <- enframe(colSums(tbl.phanta > 1e-04), value='phanta_richness', 
@@ -269,8 +347,16 @@ g.phanta <- enframe(colSums(tbl.phanta > 1e-04), value='phanta_richness',
 g.bottom <- cowplot::plot_grid(g.alpha.cor, g.phanta)
 g.sub <- cowplot::plot_grid(g.phage.cor, g.bottom, ncol=1, 
                             rel_heights = c(0.6, 0.4))
+g.phage.cor$data %>% 
+  write_csv('./files/source_data/ED3b.csv')
+g.alpha.cor$data %>% 
+  select(general_sample_id, phage_richness, richness, general_site) %>% 
+  write_csv('./files/source_data/ED9d.csv')
+g.phanta$data %>% 
+  select(general_sample_id, phanta_richness, general_site) %>% 
+  write_csv('./files/source_data/ED9e.csv')
 ggsave(g.sub, filename=here('figures', 'classification_analyses',
-                            'alpha_supplement.pdf'),
+                            'alpha_supplement_newdb.pdf'),
        width = 8, height = 9, useDingbats=FALSE)
 
 # ##############################################################################
@@ -338,6 +424,8 @@ g.cor <- x %>%
         axis.ticks = element_blank()) +
   xlab('') + ylab('') +
   geom_text(aes(label=label))
+g.cor$data %>% 
+  write_csv('./files/source_data/ED5a.csv')
 
 ggsave(g.cor, filename = here('figures', 'general', 
                               'metadata_association.pdf'),
@@ -461,431 +549,10 @@ g <- df.plot %>%
     theme_bw() + theme(panel.grid.minor = element_blank(),
                        panel.grid.major.y=element_blank()) + 
     scale_fill_manual(values=c('#F28E2B', '#4E79A7'), name='')
-ggsave(g, filename=here('figures', 'general', 'metadata_beta_assoc.pdf'),
+g$data %>% 
+  pivot_wider(names_from = name, values_from = value) %>% 
+  write_csv('./files/source_data/ED5b.csv')
+ggsave(g, filename=here('figures', 'general', 'metadata_beta_assoc_newdb.pdf'),
        width = 6, height = 8, useDingbats=FALSE)
 
-# ##############################################################################
-# sanity check: other tax levels
-
-# TODO
-
-# ##############################################################################
-# sanity check: other classification methods
-
-# TODO
-
-
-
-
-
-# ##############################################################################
-# old
-
-alpha.motus <- .f_alpha(lst.motus.gtdb$species_full_name[,included.samples], 
-                        l=7500, rarefy=TRUE)
-ggsave(alpha.motus$plot, filename = here('figures', 'classification_analyses',
-                                         'alpha_motus.pdf'),
-       width = 5, height = 8, useDingbats=FALSE)
-
-alpha.motus.gtdb <- .f_alpha(lst.motus.gtdb$species[,included.samples], 
-                        l=7500, rarefy=TRUE)
-ggsave(alpha.motus.gtdb$plot, filename = here('figures', 'classification_analyses',
-                                         'alpha_motus_gtdb.pdf'),
-       width = 5, height = 8, useDingbats=FALSE)
-alpha.mpa4 <- .f_alpha(lst.mpa$species, rarefy=FALSE)
-ggsave(alpha.mpa4$plot, filename = here('figures', 'classification_analyses',
-                                         'alpha_mpa4.pdf'),
-       width = 5, height = 8, useDingbats=FALSE)
-# alpha.phanta <- .f_alpha(lst.phanta.tax$species, rarefy=FALSE)
-# ggsave(alpha.phanta$plot, filename = here('figures', 'classification_analyses',
-#                                          'alpha_phanta.pdf'),
-       #width = 5, height = 8, useDingbats=FALSE)
-#alpha.phanta.vir <- .f_alpha(lst.phanta.vir$species, rarefy=FALSE)
-#ggsave(alpha.phanta.vir$plot, filename = here('figures', 'classification_analyses',
-#                                          'alpha_phanta_vir.pdf'),
-#       width = 5, height = 8, useDingbats=FALSE)
-
-# ##############################################################################
-# compare alpha diversity across tools
-
-.f_pairwise_scatter <- function(df){
-  # stopifnot(all(c('motus', 'mpa', 'phanta', 'phanta_vir') %in% colnames(df)))
-  bind_rows(df %>% transmute(x=motus, y=mpa) %>% mutate(xt='motus', yt='mpa'),
-            df %>% transmute(x=motus, y=gtdb) %>% mutate(xt='motus', yt='gtdb'),
-            df %>% transmute(x=mpa, y=gtdb) %>% mutate(xt='mpa', yt='gtdb')) %>% 
-    # df %>% transmute(x=motus, y=phanta) %>% mutate(xt='motus', yt='phanta'),
-    # df %>% transmute(x=motus, y=phanta_vir) %>% 
-      # mutate(xt='motus', yt='phanta_vir'),
-    # df %>% transmute(x=mpa, y=phanta) %>% mutate(xt='mpa', yt='phanta'),
-    # df %>% transmute(x=mpa, y=phanta_vir) %>% mutate(xt='mpa', yt='phanta_vir'),
-    # df %>% transmute(x=phanta, y=phanta_vir) %>% 
-      # mutate(xt='phanta', yt='phanta_vir')) %>% 
-    ggplot(aes(x=x, y=y)) + 
-      geom_abline(slope = 1, intercept = 0) + 
-      geom_point() + 
-      facet_grid(xt~yt) + 
-      theme_bw() + 
-      theme(panel.grid.minor = element_blank())
-    
-}
-
-df.alpha.comp <- alpha.motus$alpha_df %>% 
-  pivot_longer(-Sample_ID) %>% mutate(type='motus') %>% 
-  bind_rows(alpha.mpa4$alpha_df %>% pivot_longer(-Sample_ID) %>% 
-              mutate(type='mpa')) %>% 
-  bind_rows(alpha.motus.gtdb$alpha_df %>% pivot_longer(-Sample_ID) %>%
-              mutate(type='gtdb')) 
-  # bind_rows(alpha.phanta$alpha_df %>% pivot_longer(-Sample_ID) %>% 
-              # mutate(type='phanta')) %>% 
-  # bind_rows(alpha.phanta.vir$alpha_df %>% pivot_longer(-Sample_ID) %>% 
-              # mutate(type='phanta_vir')) 
-
-# pdf(here('figures', 'classification_analyses', 'alpha_comp.pdf'),
-    # width = 8, height = 8, useDingbats = FALSE)
-for (i in c('inv_simpson', 'richness', 'shannon', 'simpson')){
-  print(.f_pairwise_scatter(df.alpha.comp %>% 
-    filter(name==i) %>% 
-    pivot_wider(names_from = 'type', values_from = 'value')) +
-      ggtitle(i))
-}
-# dev.off()  
-
-# ##############################################################################
-# beta
-for (d in c('bray', 'jaccard', 'log-euclidean')){
-  pdf(here('figures', 'classification_analyses', 
-           paste0('beta_motus_', d,'.pdf')),
-      width = 6, height = 5, useDingbats = FALSE)
-  for (lvl in names(lst.motus)){
-    if (d=='log-euclidean'){
-      x <- .f_beta(prop.table(lst.motus[[lvl]], 2), dist=d, log.n0=1e-05)
-    } else {
-      x <- .f_beta(t(vegan::rrarefy(t(lst.motus[[lvl]][,included.samples]), 7500)), dist=d)
-    }
-    print(x$plot)
-    message(lvl)
-  }
-  dev.off()
-}
-
-for (d in c('bray', 'jaccard', 'log-euclidean')){
-  pdf(here('figures', 'classification_analyses', 
-           paste0('beta_gtdb_', d,'.pdf')),
-      width = 6, height = 5, useDingbats = FALSE)
-  for (lvl in names(lst.motus)){
-    if (d=='log-euclidean'){
-      x <- .f_beta(prop.table(lst.motus.gtdb[[lvl]], 2), dist=d, log.n0=1e-05)
-    } else {
-      x <- .f_beta(t(vegan::rrarefy(t(lst.motus.gtdb[[lvl]][,included.samples]), 7500)), dist=d)
-    }
-    print(x$plot)
-    message(lvl)
-  }
-  dev.off()
-}
-
-for (d in c('bray', 'jaccard', 'log-euclidean')){
-  pdf(here('figures', 'classification_analyses', 
-           paste0('beta_mpa4_', d,'.pdf')),
-      width = 6, height = 5, useDingbats = FALSE)
-  for (lvl in names(lst.mpa)){
-    x <- .f_beta(lst.mpa[[lvl]], dist=d, log.n0 = 1e-06)
-    print(x$plot)
-    message(lvl)
-  }
-  dev.off()
-}
-# for (d in c('bray', 'jaccard', 'log-euclidean')){
-#   pdf(here('figures', 'classification_analyses', 
-#            paste0('beta_phanta_', d,'.pdf')),
-#       width = 6, height = 5, useDingbats = FALSE)
-#   for (lvl in names(lst.phanta.tax)){
-#     x <- .f_beta(lst.phanta.tax[[lvl]], dist=d, log.n0 = 1e-06)
-#     print(x$plot)
-#     message(lvl)
-#   }
-#   dev.off()
-# }
-# for (d in c('bray', 'jaccard', 'log-euclidean')){
-#   pdf(here('figures', 'classification_analyses', 
-#            paste0('beta_phanta_vir_', d,'.pdf')),
-#       width = 6, height = 5, useDingbats = FALSE)
-#   for (lvl in names(lst.phanta.vir)){
-#     x <- .f_beta(lst.phanta.vir[[lvl]], dist=d, log.n0 = 1e-06)
-#     print(x$plot)
-#     message(lvl)
-#   }
-#   dev.off()
-# }
-
-# ##############################################################################
-# top phyla in gtdb?
-phyla <- prop.table(lst.motus.gtdb$phylum, 2)
-
-phyla.order <- sort(rowMeans(phyla))
-as_tibble(phyla, rownames='phylum') %>% 
-  pivot_longer(-phylum) %>% 
-  mutate(site=str_remove(name, '[0-9]*$')) %>% 
-  mutate(site.city=site.dict[site]) %>% 
-  mutate(site.city=factor(site.city, levels = names(site.colours))) %>% 
-  mutate(value=log10(value + 1e-03)) %>% 
-  mutate(phylum=factor(phylum, levels=names(tail(phyla.order)))) %>% 
-  filter(phylum %in% names(tail(phyla.order, n=8))) %>% 
-  ggplot(aes(x=site.city, y=value, fill=phylum)) + 
-    geom_boxplot()
-
-# difference between sites?
-
-
-
-
-
-
-
-
-
-
-
-# ##############################################################################
-# sourmash
-sourmash.dist <- read_csv('./data/sourmash/sourmash_k21.csv')
-colnames(sourmash.dist) <- str_remove(colnames(sourmash.dist), 'all_reads_')
-colnames(sourmash.dist) <- str_remove(colnames(sourmash.dist), '.fq.abundtrim')
-sourmash.dist <- as.matrix(sourmash.dist)
-rownames(sourmash.dist) <- colnames(sourmash.dist)
-
-beta.div <- vegan::vegdist(vegan::rrarefy(t(lst.motus.gtdb$species), 7500), 
-                           method = 'jaccard')
-beta.div <- as.matrix(beta.div)
-
-
-diag(sourmash.dist) <- NA_real_
-sourmash.dist[lower.tri(sourmash.dist)] <- NA_real_
-
-diag(beta.div) <- NA_real_
-beta.div[lower.tri(beta.div)] <- NA_real_
-
-df.comp <- sourmash.dist %>% 
-  as_tibble(rownames='sample_1') %>% 
-  pivot_longer(-sample_1, names_to = 'sample_2', values_to = 'sourmash') %>% 
-  filter(!is.na(sourmash)) %>% 
-  right_join(as_tibble(beta.div, rownames='sample_1') %>% 
-              pivot_longer(-sample_1, names_to = 'sample_2', 
-                           values_to = 'beta') %>% 
-              filter(!is.na(beta)),
-            by=c('sample_1', 'sample_2')) %>% 
-  mutate(sourmash=1-sourmash)
-g <- df.comp %>% 
-  ggplot(aes(x=sourmash, y=beta)) + 
-    geom_point(alpha=0.1) + 
-    geom_abline(slope = 1, intercept = 0) + 
-    theme_bw()
-ggsave(g, filename='~/Desktop/test.png', width = 6, height = 6)
-
-
-df.comp %>% 
-  mutate(site1=str_remove(sample_1, '[0-9]{3}$')) %>% 
-  mutate(site2=str_remove(sample_2, '[0-9]{3}$')) %>% 
-  mutate(type=case_when(site1==site2~site1,
-                        TRUE~paste0(site1,'-', site2))) %>% 
-  mutate(type2=str_detect(type, '-')) %>% 
-  select(type, type2, sourmash, beta) %>% 
-  pivot_longer(cols=c(sourmash, beta)) %>% 
-  ggplot(aes(x=type, y=value, fill=name)) + 
-    geom_boxplot() + 
-    facet_grid(~type2, scales = 'free_x', space = 'free')
-
-g <- df.comp %>% 
-  mutate(site1=str_remove(sample_1, '[0-9]{3}$')) %>% 
-  mutate(site2=str_remove(sample_2, '[0-9]{3}$')) %>% 
-  mutate(type=case_when(site1==site2~site1,
-                        TRUE~paste0(site1,'-', site2))) %>% 
-  filter(!str_detect(type, '-')) %>% 
-  pivot_longer(cols=c(sourmash, beta)) %>% 
-  mutate(site=site.dict[type]) %>% 
-  mutate(site=factor(site, levels=names(site.colours))) %>% 
-  ggplot(aes(x=site, y=value, fill=site)) + 
-    geom_violin( ) +
-    geom_boxplot(outlier.shape = NA,fill='white', width=0.2) +
-    facet_wrap(~name, scales='free_y') + 
-    theme_bw() + 
-    scale_fill_manual(values=site.colours) +
-    scale_colour_manual(values=site.colours) +
-    xlab('') + ylab("Distance")
-ggsave(g, filename='./figures/classification_analyses/distances_sourmash.pdf',
-       width = 7, height = 4, useDingbats=FALSE)
-
-tmp <- df.comp %>% 
-  mutate(site1=str_remove(sample_1, '[0-9]{3}$')) %>% 
-  mutate(site2=str_remove(sample_2, '[0-9]{3}$')) %>% 
-  mutate(type=case_when(site1==site2~site1,
-                        TRUE~paste0(site1,'-', site2))) %>% 
-  filter(!str_detect(type, '-')) 
-
-
-# ##############################################################################
-# which taxa are different across sites?
-
-sites <- c('BF', 'GH', 'DM', 'AG', 'KY', 'SW')
-
-phi <- function(t){  
-  # expects: t is a 2 x 2 matrix or a vector of length(4)
-  stopifnot(prod(dim(t)) == 4 || length(t) == 4)
-  if(is.vector(t)) t <- matrix(t, 2)
-  r.sum <- rowSums(t)
-  c.sum <- colSums(t)
-  total <- sum(r.sum)
-  r.sum <- r.sum/total
-  c.sum <- c.sum/total
-  v <- prod(r.sum, c.sum)
-  phi <- (t[1,1]/total - c.sum[1]*r.sum[1]) /sqrt(v)
-  names(phi) <- NULL
-  return(phi)
-}
-
-all.res <- list()
-for (lvl in names(lst.motus.gtdb)){
-  message(lvl)
-  tmp <- prop.table(lst.motus.gtdb[[lvl]], 2) %>% 
-    as_tibble(rownames='taxa') %>% 
-    pivot_longer(-taxa) %>% 
-    mutate(site=str_remove(name, '[0-9]{3}$'))
-  
-  
-  for (s1 in seq_along(sites[-1])){
-    for (s2 in seq(from=s1+1, to=length(sites))){
-      message(sites[s1], '-', sites[s2])
-      x <- tmp %>% 
-        filter(site %in% c(sites[s1], sites[s2])) %>% 
-        mutate(value=value > 1e-04)
-      df.res <- map(unique(x$taxa), .f = function(t){
-        tab <- table(x %>% filter(taxa==t) %>% pull(value),
-                     x %>% filter(taxa==t) %>% pull(site))
-        if (any(dim(tab) ==1)){
-          return(tibble(taxon=t, effect.size=NA_real_, p.val=NA_real_))
-        } else {
-          res <- chisq.test(tab)
-          ef <- phi(tab)
-          return(tibble(taxon=t, effect.size=ef, p.val=res$p.value))
-        }})  %>% bind_rows() %>% 
-        mutate(comp=paste0(sites[s1], '-', sites[s2])) %>% 
-        mutate(level=lvl)
-      all.res[[length(all.res) + 1]] <- df.res
-    }
-  }
-}
-
-df.plot <- all.res %>% 
-  bind_rows() %>% 
-  filter(!is.na(p.val))
-g <- df.plot %>% 
-  group_by(level, comp) %>% 
-  summarise(m=sum(p.val < 1e-03), .groups = 'drop') %>% 
-  full_join(df.plot %>% group_by(level) %>% 
-              summarise(n.all=length(unique(taxon))), by='level') %>% 
-  mutate(frac=m/n.all) %>% 
-  separate(comp, into = c('site1', 'site2'), sep='-') %>% 
-  mutate(site1=factor(site1, levels=sites)) %>% 
-  mutate(site2=factor(site2, levels=sites)) %>% 
-  mutate(level=factor(level, levels=names(lst.motus.gtdb))) %>% 
-  filter(level!='kingdom') %>%
-  
-  ggplot(aes(x=site1, y=site2, fill=frac)) + 
-    geom_tile() + 
-    facet_wrap(~level) + 
-    theme_bw() + theme(panel.grid = element_blank()) +
-    scale_fill_gradientn(colours=viridis::viridis(n=20), 
-                         name='Fraction of\ndiff. ab. taxa') +
-    xlab('') + ylab('')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-lvl <- 'species'
-d <- 'bray'
-x <- .f_beta(t(vegan::rrarefy(t(lst.motus.gtdb[[lvl]][,included.samples]), 7500)), dist=d)
-
-
-tmp <- x$coords %>% 
-  left_join(prop.table(lst.motus.gtdb$phylum, 2) %>% 
-              as_tibble(rownames='phylum') %>% 
-              pivot_longer(-phylum, names_to = 'Sample'), by='Sample') %>% 
-  mutate(value=log10(value + 1e-04))
-
-tmp.r <- enframe(colSums(prop.table(as.matrix(lst.motus.gtdb$species_full_name), 2)>1e-04),
-        name='Sample', value='richness') %>% 
-  right_join(x$coords, by='Sample') 
-  
-
-df.cor <- tmp %>% 
-  group_by(site, phylum) %>% 
-  mutate(med=median(value)) %>% 
-  group_by(phylum) %>% 
-  summarise(correlation2=cor(PCo2, value, method='pearson'), 
-            correlation1=cor(PCo1, value, method='pearson'), 
-            m=max(value))
-
-df.cor %>% 
-  mutate(label=case_when(m > -1~phylum, TRUE~'')) %>% 
-  ggplot(aes(x=abs(correlation1), y=abs(correlation2), size=m)) + 
-    geom_point() + 
-    ggrepel::geom_text_repel(aes(label=label))
-
-tmp %>% 
-  ggplot(aes(x=PCo2, y=value)) + 
-    geom_point() + 
-    facet_wrap(~phylum)
-
-
-tmp %>% 
-  filter(phylum=='f__Rikenellaceae') %>% 
-  ggplot(aes(x=PCo2, y=value, colour=site)) + 
-    geom_point()
-
-
-# get the eta for each phylum per site
-tmp %>% group_by(phylum) %>% 
-  group_map(.f=function(.x, .y){
-    res <- anova(lm(value~site, data=.x))
-    eta <- res$`Sum Sq`[1]/sum(res$`Sum Sq`)
-    tibble(eta=eta, .y)
-    }) %>% bind_rows() %>% full_join(df.cor, by='phylum') %>% View
-  ggplot(aes(x=correlation1, y=correlation2, colour=eta)) + 
-    geom_point() + 
-    scale_colour_viridis_c()
-
-
-  tmp <- bind_cols(
-    metadata.clean %>% 
-      select(general_sample_id), 
-    metadata.clean %>% 
-      select_if(is.factor)) %>% 
-    left_join(x$coords %>% rename(general_sample_id=Sample))
-df.cor <- tibble(pc=character(0), meta=character(0), p=double(0), sp=double(0))
-for (x in colnames(metadata.clean %>% select_if(is.factor))){
-  pearson <- cor(tmp$PCo1, as.numeric(tmp[[x]]), use = 'pairwise.complete.obs')
-  spearman <- cor(tmp$PCo1, as.numeric(tmp[[x]]), use = 'pairwise.complete.obs', method='spearman')
-  df.cor <- df.cor %>% 
-    add_row(pc='1', meta=x, p=pearson, sp=spearman)
-  pearson <- cor(tmp$PCo2, as.numeric(tmp[[x]]), use = 'pairwise.complete.obs')
-  spearman <- cor(tmp$PCo2, as.numeric(tmp[[x]]), use = 'pairwise.complete.obs', method='spearman')
-  df.cor <- df.cor %>% 
-    add_row(pc='2', meta=x, p=pearson, sp=spearman)
-  
-  
-}
-  
-  
+write_tsv(df.plot, file='./files/var_explained_newdb.tsv')
