@@ -212,11 +212,12 @@ motus.all <- as.matrix(motus.all)
 # remove samples with too few motus counts
 enframe(colSums(motus.all)) %>% 
   ggplot(aes(x=value)) + 
-  geom_histogram(bins=100)
+    geom_histogram(bins=100)
 enframe(colSums(motus.all), name="Sample") %>% 
   full_join(read.counts, by='Sample') %>% 
   ggplot(aes(x=value, y=hostremoved_reads)) + 
-  geom_point()
+    geom_point() + 
+    geom_vline(xintercept = 3000)
 
 # everything under 3000 counts is pretty weird
 motus.all <- motus.all[,colSums(motus.all) > 3000]
@@ -228,6 +229,31 @@ motus.all <- motus.all[,setdiff(colnames(motus.all), colnames(motus.buffer))]
 motus.all <- motus.all[rowMeans(motus.all!=0) > 0,]
 motus.rel <- prop.table(motus.all, 2)
 
+# type of motus per sample
+g <- motus.rel %>% 
+  as_tibble(rownames='species') %>% 
+  mutate(type=case_when(str_detect(species, 'ref_mOTU_v3')~'ref',
+                        str_detect(species, 'meta_mOTU_v3')~'meta',
+                        str_detect(species, 'ext_mOTU_v3')~'ext',
+                        TRUE~'unassigned')) %>% 
+  pivot_longer(-c(species, type)) %>% 
+  group_by(name, type) %>% 
+  summarise(ab=sum(value)) %>% 
+  mutate(site=str_remove(name, '[0-9]{3}$')) %>% 
+  mutate(site=site.dict[site]) %>% 
+  mutate(site=factor(site, levels=names(site.colours))) %>%
+  mutate(type=factor(type, levels=c('ref', 'meta', 'ext', 'unassigned'))) %>% 
+  ggplot(aes(x=site, y=ab, fill=type)) + 
+    geom_boxplot(colour='black') +
+    xlab('') + ylab('Relative abundance') + 
+    theme_bw() + theme(panel.grid.minor = element_blank(),
+                       panel.grid.major.x = element_blank()) + 
+    scale_fill_manual(values=c('#09425A80', '#009B7680', '#E04F39', '#7F7776'), 
+                      name='Type', labels=c('reference', 'metagenomic', 
+                                            'environmental', 'unassigned')) + 
+    ylim(c(0,1))
+ggsave(g, filename=here('figures', 'general', 'motus_type.pdf'),
+       width = 8, height = 5, useDingbats=FALSE)
 
 .f_get_motus_level <- function(lvl='phylum', motus.tbl){
   motus.tax <- read_tsv(here('files', 'motus_taxonomy.tsv'), 
@@ -260,6 +286,59 @@ lst.motus <- motus.other.levels
 lst.motus[['species']] <- motus.all
 
 # ##############################################################################
+# also for GTDB taxonomy
+motus.tax.gtdb <- read_tsv(here('files', 'mOTUs_3.0.0_GTDB_tax.tsv'), 
+                           col_names=c('mOTU', 'domain', 'phylum', 'class', 
+                                       'order', 'family', 'genus', 'species'))
+.f_get_motus_level <- function(lvl='phylum', motus.tbl){
+  stopifnot(lvl %in% colnames(motus.tax.gtdb)[2:8])
+  rownames(motus.tbl) <- str_extract(
+    rownames(motus.tbl), '((ref|meta|ext)_mOTU_v3_[0-9]{5}|(unassigned))')
+  new.level <- unique(motus.tax.gtdb[[lvl]])
+  new.mat <- matrix(0, nrow = length(new.level)+1, ncol=ncol(motus.tbl),
+                    dimnames = list(c(new.level, 'unassigned'), 
+                                    colnames(motus.tbl)))
+  for (x in new.level){
+    incl.motus <- motus.tax.gtdb %>% 
+      filter(eval(sym(lvl)) ==x) %>% 
+      filter(mOTU %in% rownames(motus.tbl)) %>% 
+      pull(mOTU)
+    if (length(incl.motus) > 0){
+      new.mat[x,] <- colSums(motus.tbl[incl.motus,,drop=FALSE])
+    }
+  }
+  new.mat['unassigned',] <- motus.tbl['unassigned',]
+  new.mat <- new.mat[rowMeans(new.mat!=0) > 0,]
+  return(new.mat)
+}
+
+lvls <- c('domain', 'phylum', 'class', 'order', 'family', 'genus', 'species')
+motus.gtdb.lvls <- map(lvls, .f = .f_get_motus_level, motus.tbl=motus.all)
+names(motus.gtdb.lvls) <- lvls
+lst.motus.gtdb <- motus.gtdb.lvls
+names(lst.motus.gtdb)[1] <- 'kingdom'
+
+# full tax name for Luicer
+motus.tmp <- motus.all
+rownames(motus.tmp) <- str_extract(
+  rownames(motus.tmp), '((ref|meta|ext)_mOTU_v3_[0-9]{5}|(unassigned))')
+motus.tax.gtdb <- motus.tax.gtdb %>% 
+  unite(col='new_name', domain, phylum, class, order, family, genus, species, 
+        sep=';') 
+rownames(motus.tmp) <- motus.tax.gtdb$new_name[match(rownames(motus.tmp), 
+                                                     motus.tax.gtdb$mOTU)]
+rownames(motus.tmp)[length(rownames(motus.tmp))] <- 'unassigned'
+motus.tmp <- as_tibble(motus.tmp, rownames='species') %>% 
+  pivot_longer(-species) %>% 
+  group_by(species, name) %>%
+  summarize(value=sum(value), .groups = 'drop') %>% 
+  pivot_wider(names_from = name, values_from = value) %>% 
+  as.data.frame()
+rownames(motus.tmp) <- motus.tmp$species
+motus.tmp$species <- NULL
+lst.motus.gtdb[['species_full_name']] <- motus.tmp
+
+# ##############################################################################
 # read in classification data 
 # mpa4
 
@@ -273,8 +352,8 @@ rownames(mpa4.species) <- str_remove(rownames(mpa4.species), '^.*\\|s__')
 mpa4.species <- t(t(mpa4.species)/100)
 
 mpa4.buffer <- mpa4.species[,str_detect(colnames(mpa4.all), 'Buffer|Zymo')]
-mpa4.all <- mpa4.all[,setdiff(colnames(mpa4.all), colnames(mpa4.buffer))]
-mpa4.species <- mpa4.species[,setdiff(colnames(mpa4.species), colnames(mpa4.buffer))]
+mpa4.all <- mpa4.all[,colnames(motus.all)]
+mpa4.species <- mpa4.species[,colnames(motus.all)]
 
 # other levels
 mpa.other.levels <- map(lvls, .f=function(lvl){
@@ -425,7 +504,8 @@ lst.phanta.rel <- phanta.rel.other.levels
 
 # ##############################################################################
 # save classification tables
-save(lst.motus, lst.mpa, lst.phanta.tax, lst.phanta.vir, lst.phanta.rel,
+save(lst.motus, lst.motus.gtdb, lst.mpa, lst.phanta.vir, 
+     lst.phanta.tax, lst.phanta.rel,
      file = here('data', 'classification', 'all_classification_tables.RData'))
 
 # ##############################################################################
