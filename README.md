@@ -1,15 +1,33 @@
 # AWIGen2Microbiome
-Repository for the AWI-Gen 2 microbiome project workflows, analysis, and results. 
 
+Repository for the AWI-Gen 2 microbiome project workflows, analysis, and 
+results. 
 
-## Run the workflow
+Please note that this repository aims to document our analysis approach and is
+not intended for a full reproduction of the results, since the metadata tables 
+are needed to fully run many of the scripts. Given the nature of the project, 
+the metadata tables are available from EGA only after approval from 
+the relevant data access committee. 
 
-For the preprocessing, run the workflow like that (on SCG):
+### Reference
 
-```
-module load java/18.0.2.1
-module load nextflow/22.10.5
-ssub -m 6 -t 8 -n nextflow "nextflow run main.nf -c config/run.config -params-file config/params.yml -with-trace -with-report"
-```
+Please refer to this publication:
 
+> [Maghini, Ovoduran _et al._ Expanding the Gut Microbiome Atlas of 
+Africa __Nature__ 2024](add the URL here as soon as we have it)
 
+### Repository organization
+
+- `./data/` Folder to hold classification and metadata tables.
+- `./files/` Folder to hold derived data tables after running the scripts.
+- `./figures/` Folder to hold figures after running the scripts.
+- `./src/` R code for the analysis
+- `./cluster_scripts/` Other analysis and data-wrangling scripts that were run 
+on our cluster
+- `./workflows/` Legacy folder for the nextflow processing workflows
+
+## Contact and questions
+
+If you have any questions or comments, please feel free to 
+[open an issue](https://github.com/bhattlab/AWIGen2Microbiome/issues/new) or
+contact the corresponding author on the above-mentioned publication.
