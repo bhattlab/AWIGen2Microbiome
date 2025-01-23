@@ -14,7 +14,7 @@ the relevant data access committee.
 Please refer to this publication:
 
 > [Maghini, Ovoduran _et al._ Expanding the Gut Microbiome Atlas of 
-Africa __Nature__ 2024](add the URL here as soon as we have it)
+Africa __Nature__ 2025](https://www.nature.com/articles/s41586-024-08485-8)
 
 ### Repository organization
 
